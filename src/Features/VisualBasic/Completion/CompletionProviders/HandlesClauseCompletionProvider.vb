@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Threading
 Imports Microsoft.CodeAnalysis.Completion
 Imports Microsoft.CodeAnalysis.Completion.Providers
@@ -22,7 +20,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
                 Return SpecializedTasks.EmptyEnumerable(Of ISymbol)()
             End If
 
-            If context.TargetToken.Kind = SyntaxKind.None Then
+            If context.TargetToken.VBKind = SyntaxKind.None Then
                 Return SpecializedTasks.EmptyEnumerable(Of ISymbol)()
             End If
 
@@ -97,7 +95,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim result As IEnumerable(Of ISymbol) = Nothing
 
             Dim previousToken = token.GetPreviousToken()
-            Select Case previousToken.Kind
+            Select Case previousToken.VBKind
                 Case SyntaxKind.MeKeyword, SyntaxKind.MyClassKeyword
                     result = context.SemanticModel.LookupSymbols(context.Position, TryCast(containingType, INamespaceOrTypeSymbol)) _
                         .OfType(Of IEventSymbol)()
@@ -158,7 +156,8 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
         Protected Overrides Async Function CreateContext(document As Document, position As Integer, cancellationToken As CancellationToken) As Task(Of AbstractSyntaxContext)
             Dim semanticModel = Await document.GetSemanticModelForSpanAsync(New TextSpan(position, 0), cancellationToken).ConfigureAwait(False)
-            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken)
+            Dim syntaxTree = Await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(False)
+            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken)
         End Function
 
         Protected Overrides Function GetTextChangeSpan(text As SourceText, position As Integer) As TextSpan

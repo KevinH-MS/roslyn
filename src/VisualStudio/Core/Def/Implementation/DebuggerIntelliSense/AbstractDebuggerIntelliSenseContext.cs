@@ -1,5 +1,3 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,10 +5,13 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editor;
+using Microsoft.CodeAnalysis.SemanticModelWorkspaceService;
+using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense2;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -23,17 +24,17 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelli
 {
     internal abstract class AbstractDebuggerIntelliSenseContext : IDisposable
     {
-        private readonly IWpfTextView _textView;
-        private readonly IContentType _contentType;
+        private readonly IWpfTextView textView;
+        private readonly IContentType contentType;
         protected readonly IProjectionBufferFactoryService ProjectionBufferFactoryService;
         protected readonly Microsoft.VisualStudio.TextManager.Interop.TextSpan CurrentStatementSpan;
-        private readonly IVsTextLines _debuggerTextLines;
-        private IProjectionBuffer _projectionBuffer;
-        private DebuggerTextView _debuggerTextView;
-        private DebuggerIntelliSenseWorkspace _workspace;
-        private ImmediateWindowContext _immediateWindowContext;
-        private readonly IBufferGraphFactoryService _bufferGraphFactoryService;
-        private readonly bool _isImmediateWindow;
+        private readonly IVsTextLines debuggerTextLines;
+        private IProjectionBuffer projectionBuffer;
+        private DebuggerTextView debuggerTextView;
+        private DebuggerIntelliSenseWorkspace workspace;
+        private ImmediateWindowContext immediateWindowContext;
+        private readonly IBufferGraphFactoryService bufferGraphFactoryService;
+        private readonly bool isImmediateWindow;
 
         private class ImmediateWindowContext
         {
@@ -53,14 +54,14 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelli
             IServiceProvider serviceProvider,
             IContentType contentType)
         {
-            _textView = wpfTextView;
-            _debuggerTextLines = vsDebuggerTextLines;
+            this.textView = wpfTextView;
+            this.debuggerTextLines = vsDebuggerTextLines;
             this.ContextBuffer = contextBuffer;
             this.CurrentStatementSpan = currentStatementSpan[0];
-            _contentType = contentType;
+            this.contentType = contentType;
             this.ProjectionBufferFactoryService = componentModel.GetService<IProjectionBufferFactoryService>();
-            _bufferGraphFactoryService = componentModel.GetService<IBufferGraphFactoryService>();
-            _isImmediateWindow = IsImmediateWindow((IVsUIShell)serviceProvider.GetService(typeof(SVsUIShell)), vsTextView);
+            this.bufferGraphFactoryService = componentModel.GetService<IBufferGraphFactoryService>();
+            this.isImmediateWindow = IsImmediateWindow((IVsUIShell)serviceProvider.GetService(typeof(SVsUIShell)), vsTextView);
         }
 
         // Constructor for testing
@@ -71,24 +72,24 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelli
             IContentType contentType,
             bool isImmediateWindow)
         {
-            _textView = wpfTextView;
+            this.textView = wpfTextView;
             this.ContextBuffer = contextBuffer;
             this.CurrentStatementSpan = currentStatementSpan[0];
-            _contentType = contentType;
+            this.contentType = contentType;
             this.ProjectionBufferFactoryService = componentModel.GetService<IProjectionBufferFactoryService>();
-            _bufferGraphFactoryService = componentModel.GetService<IBufferGraphFactoryService>();
-            _isImmediateWindow = isImmediateWindow;
+            this.bufferGraphFactoryService = componentModel.GetService<IBufferGraphFactoryService>();
+            this.isImmediateWindow = isImmediateWindow;
         }
 
-        public IVsTextLines DebuggerTextLines { get { return _debuggerTextLines; } }
+        public IVsTextLines DebuggerTextLines { get { return this.debuggerTextLines; } }
 
-        public ITextView DebuggerTextView { get { return _debuggerTextView; } }
+        public ITextView DebuggerTextView { get { return this.debuggerTextView; } }
 
-        public ITextBuffer Buffer { get { return _projectionBuffer; } }
+        public ITextBuffer Buffer { get { return this.projectionBuffer; } }
 
-        public IContentType ContentType { get { return _contentType; } }
+        public IContentType ContentType { get { return this.contentType; } }
 
-        protected bool InImmediateWindow { get { return _immediateWindowContext != null; } }
+        protected bool InImmediateWindow { get { return this.immediateWindowContext != null; } }
 
         protected ITextBuffer ContextBuffer { get; private set; }
 
@@ -112,13 +113,13 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelli
             }
 
             // Reset the question mark location, since we may have to search for one again.
-            _immediateWindowContext.QuestionIndex = -2;
+            this.immediateWindowContext.QuestionIndex = -2;
             SetupImmediateWindowProjectionBuffer();
         }
 
         internal bool TryInitialize()
         {
-            return this.TrySetContext(_isImmediateWindow);
+            return this.TrySetContext(this.isImmediateWindow);
         }
 
         private bool TrySetContext(
@@ -129,91 +130,59 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelli
             Document document = ContextBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges();
             if (document == null)
             {
-                _projectionBuffer = null;
-                _debuggerTextView = null;
-                _workspace = null;
-                _immediateWindowContext = null;
+                this.projectionBuffer = null;
+                this.debuggerTextView = null;
+                this.workspace = null;
+                this.immediateWindowContext = null;
                 return false;
             }
 
             var solution = document.Project.Solution;
 
             // Get the appropriate ITrackingSpan for the window the user is typing in
-            var viewSnapshot = _textView.TextSnapshot;
-            _immediateWindowContext = null;
+            var viewSnapshot = this.textView.TextSnapshot;
+            this.immediateWindowContext = null;
             var debuggerMappedSpan = isImmediateWindow
-                ? CreateImmediateWindowProjectionMapping(document, out _immediateWindowContext)
+                ? CreateImmediateWindowProjectionMapping(document, out this.immediateWindowContext)
                 : viewSnapshot.CreateFullTrackingSpan(SpanTrackingMode.EdgeInclusive);
 
-            // Wrap the original ContextBuffer in a projection buffer that we can make read-only
-            this.ContextBuffer = this.ProjectionBufferFactoryService.CreateProjectionBuffer(null,
-                new object[] { this.ContextBuffer.CurrentSnapshot.CreateFullTrackingSpan(SpanTrackingMode.EdgeInclusive) }, ProjectionBufferOptions.None, _contentType);
+            this.projectionBuffer = AssembleProjection(debuggerMappedSpan, this.contentType, ProjectionBufferFactoryService);
+            var bufferGraph = this.bufferGraphFactoryService.CreateBufferGraph(projectionBuffer);
 
-            // Make projection readonly so we can't edit it by mistake.
-            using (var regionEdit = this.ContextBuffer.CreateReadOnlyRegionEdit())
-            {
-                regionEdit.CreateReadOnlyRegion(new Span(0, this.ContextBuffer.CurrentSnapshot.Length), SpanTrackingMode.EdgeInclusive, EdgeInsertionMode.Deny);
-                regionEdit.Apply();
-            }
+            var debuggerView = new DebuggerTextView(this.textView, bufferGraph, isImmediateWindow);
 
-            // Adjust the context point to ensure that the right information is in scope.
-            // For example, we may need to move the point to the end of the last statement in a method body
-            // in order to be able to access all local variables.
-            var contextPoint = this.ContextBuffer.CurrentSnapshot.GetLineFromLineNumber(CurrentStatementSpan.iEndLine).Start + CurrentStatementSpan.iEndIndex;
-            var adjustedContextPoint = GetAdjustedContextPoint(contextPoint, document);
+            var start = ContextBuffer.CurrentSnapshot.GetLineFromLineNumber(CurrentStatementSpan.iStartLine).Start + CurrentStatementSpan.iStartIndex;
+            var end = ContextBuffer.CurrentSnapshot.GetLineFromLineNumber(CurrentStatementSpan.iEndLine).Start + CurrentStatementSpan.iEndIndex;
+            var span = new Microsoft.CodeAnalysis.Text.TextSpan(start, end - start);
 
-            // Get the previous span/text. We might have to insert another newline or something.
-            var previousStatementSpan = GetPreviousStatementBufferAndSpan(adjustedContextPoint, document);
+            DebuggerWorkspace debuggerWorkspace = CreateDebuggerWorkspace(debuggerView, projectionBuffer, document);
+            var semanticModelService = debuggerWorkspace.Context.GetLanguageService<IDebuggerSemanticModelLanguageService>();
+            semanticModelService.UpdateContext(document, span);
 
-            // Build the tracking span that includes the rest of the file
-            var restOfFileSpan = ContextBuffer.CurrentSnapshot.CreateTrackingSpanFromIndexToEnd(adjustedContextPoint, SpanTrackingMode.EdgePositive);
+            this.textView.TextBuffer.ChangeContentType(this.contentType, null);
+            this.debuggerTextView = (DebuggerTextView)debuggerWorkspace.TextView;
 
-            // Put it all into a projection buffer
-            _projectionBuffer = this.ProjectionBufferFactoryService.CreateProjectionBuffer(null,
-                new object[] { previousStatementSpan, debuggerMappedSpan, this.StatementTerminator, restOfFileSpan }, ProjectionBufferOptions.None, _contentType);
-
-            // Fork the solution using this new primary buffer for the document and all of its linked documents.
-            var forkedSolution = solution.WithDocumentText(document.Id, _projectionBuffer.CurrentSnapshot.AsText(), PreservationMode.PreserveIdentity);
-            foreach (var link in document.GetLinkedDocumentIds())
-            {
-                forkedSolution = forkedSolution.WithDocumentText(link, _projectionBuffer.CurrentSnapshot.AsText(), PreservationMode.PreserveIdentity);
-            }
-
-            // Put it into a new workspace, and open it and its related documents
-            // with the projection buffer as the text.
-            _workspace = new DebuggerIntelliSenseWorkspace(forkedSolution);
-            _workspace.OpenDocument(document.Id, _projectionBuffer.AsTextContainer());
-            foreach (var link in document.GetLinkedDocumentIds())
-            {
-                _workspace.OpenDocument(link, _projectionBuffer.AsTextContainer());
-            }
-
-            // Start getting the compilation so the PartialSolution will be ready when the user starts typing in the window
-            _workspace.CurrentSolution.GetCompilationAsync(document.Project, System.Threading.CancellationToken.None);
-
-            _textView.TextBuffer.ChangeContentType(_contentType, null);
-
-            var bufferGraph = _bufferGraphFactoryService.CreateBufferGraph(_projectionBuffer);
-
-            _debuggerTextView = new DebuggerTextView(_textView, bufferGraph, this.InImmediateWindow);
             return true;
         }
 
+        internal abstract IProjectionBuffer AssembleProjection(ITrackingSpan debuggerMappedSpan, IContentType contentType, IProjectionBufferFactoryService projectionFactory);
+        internal abstract DebuggerWorkspace CreateDebuggerWorkspace(DebuggerTextView debuggerTextView, ITextBuffer textBuffer, Document contextDocument);
+
         private ITrackingSpan CreateImmediateWindowProjectionMapping(Document document, out ImmediateWindowContext immediateWindowContext)
         {
-            var caretLine = _textView.Caret.ContainingTextViewLine.Extent;
-            var currentLineIndex = _textView.TextSnapshot.GetLineNumberFromPosition(caretLine.Start.Position);
+            var caretLine = this.textView.Caret.ContainingTextViewLine.Extent;
+            var currentLineIndex = this.textView.TextSnapshot.GetLineNumberFromPosition(caretLine.Start.Position);
 
-            var debuggerMappedSpan = _textView.TextSnapshot.CreateFullTrackingSpan(SpanTrackingMode.EdgeInclusive);
+            var debuggerMappedSpan = this.textView.TextSnapshot.CreateFullTrackingSpan(SpanTrackingMode.EdgeInclusive);
             var projectionBuffer = this.ProjectionBufferFactoryService.CreateProjectionBuffer(null,
-                new object[] { debuggerMappedSpan }, ProjectionBufferOptions.PermissiveEdgeInclusiveSourceSpans, _contentType);
+                new object[] { debuggerMappedSpan }, ProjectionBufferOptions.PermissiveEdgeInclusiveSourceSpans, this.contentType);
 
             // There's currently a bug in the editor (515925) where an elision buffer can't be projected into
-            // another projection buffer.  So workaround by using a second projectiong buffer that only 
+            // another projection buffer.  So workaround by using a second projection buffer that only 
             // projects the text we care about
             var elisionProjectionBuffer = this.ProjectionBufferFactoryService.CreateProjectionBuffer(null,
                 new object[] { projectionBuffer.CurrentSnapshot.CreateFullTrackingSpan(SpanTrackingMode.EdgeInclusive) },
-                ProjectionBufferOptions.None, _contentType);
+                ProjectionBufferOptions.None, this.contentType);
 
             immediateWindowContext = new ImmediateWindowContext()
             {
@@ -221,7 +190,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelli
                 ElisionBuffer = elisionProjectionBuffer
             };
 
-            _textView.TextBuffer.PostChanged += TextBuffer_PostChanged;
+            this.textView.TextBuffer.PostChanged += TextBuffer_PostChanged;
 
             SetupImmediateWindowProjectionBuffer();
 
@@ -238,17 +207,17 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelli
         /// </summary>
         private void SetupImmediateWindowProjectionBuffer()
         {
-            var caretLine = _textView.Caret.ContainingTextViewLine.Extent;
-            var currentLineIndex = _textView.TextSnapshot.GetLineNumberFromPosition(caretLine.Start.Position);
+            var caretLine = this.textView.Caret.ContainingTextViewLine.Extent;
+            var currentLineIndex = this.textView.TextSnapshot.GetLineNumberFromPosition(caretLine.Start.Position);
             var questionIndex = GetQuestionIndex(caretLine.GetText());
 
-            if (_immediateWindowContext.QuestionIndex != questionIndex ||
-                _immediateWindowContext.CurrentLineIndex != currentLineIndex)
+            if (this.immediateWindowContext.QuestionIndex != questionIndex ||
+                this.immediateWindowContext.CurrentLineIndex != currentLineIndex)
             {
-                _immediateWindowContext.QuestionIndex = questionIndex;
-                _immediateWindowContext.CurrentLineIndex = currentLineIndex;
-                _immediateWindowContext.ProjectionBuffer.DeleteSpans(0, _immediateWindowContext.ProjectionBuffer.CurrentSnapshot.SpanCount);
-                _immediateWindowContext.ProjectionBuffer.InsertSpan(0, _textView.TextSnapshot.CreateTrackingSpanFromIndexToEnd(caretLine.Start.Position + questionIndex + 1, SpanTrackingMode.EdgeInclusive));
+                this.immediateWindowContext.QuestionIndex = questionIndex;
+                this.immediateWindowContext.CurrentLineIndex = currentLineIndex;
+                this.immediateWindowContext.ProjectionBuffer.DeleteSpans(0, this.immediateWindowContext.ProjectionBuffer.CurrentSnapshot.SpanCount);
+                this.immediateWindowContext.ProjectionBuffer.InsertSpan(0, this.textView.TextSnapshot.CreateTrackingSpanFromIndexToEnd(caretLine.Start.Position + questionIndex + 1, SpanTrackingMode.EdgeInclusive));
             }
         }
 
@@ -305,14 +274,17 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelli
         public void Dispose()
         {
             // Unsubscribe from events
-            _textView.TextBuffer.PostChanged -= TextBuffer_PostChanged;
-            _debuggerTextView.DisconnectFromIntellisenseControllers();
+            this.textView.TextBuffer.PostChanged -= TextBuffer_PostChanged;
+            this.debuggerTextView.DisconnectFromIntellisenseControllers();
 
             // The buffer graph subscribes to events of its source buffers, we're no longer interested
-            _projectionBuffer.DeleteSpans(0, _projectionBuffer.CurrentSnapshot.SpanCount);
+            this.projectionBuffer.DeleteSpans(0, this.projectionBuffer.CurrentSnapshot.SpanCount);
 
             // The next request will use a new workspace
-            _workspace.Dispose();
+            if (this.workspace != null)
+            {
+                this.workspace.Dispose();
+            }
         }
     }
 }

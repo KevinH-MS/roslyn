@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Threading
 Imports Microsoft.CodeAnalysis
 Imports Microsoft.CodeAnalysis.Completion
@@ -15,7 +13,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
     Friend Class PartialTypeCompletionProvider
         Inherits AbstractCompletionProvider
 
-        Private ReadOnly _partialNameFormat As SymbolDisplayFormat =
+        Private ReadOnly PartialNameFormat As SymbolDisplayFormat =
             New SymbolDisplayFormat(
                 globalNamespaceStyle:=SymbolDisplayGlobalNamespaceStyle.Omitted,
                 typeQualificationStyle:=SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
@@ -50,10 +48,10 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             End If
 
             Dim token = tree.FindTokenOnLeftOfPosition(position, cancellationToken).GetPreviousTokenIfTouchingWord(position)
-            If token.IsChildToken(Of ClassStatementSyntax)(Function(stmt) stmt.DeclarationKeyword) OrElse
-               token.IsChildToken(Of StructureStatementSyntax)(Function(stmt) stmt.DeclarationKeyword) OrElse
-               token.IsChildToken(Of InterfaceStatementSyntax)(Function(stmt) stmt.DeclarationKeyword) OrElse
-               token.IsChildToken(Of ModuleStatementSyntax)(Function(stmt) stmt.DeclarationKeyword) Then
+            If token.IsChildToken(Of ClassStatementSyntax)(Function(stmt) stmt.Keyword) OrElse
+               token.IsChildToken(Of StructureStatementSyntax)(Function(stmt) stmt.Keyword) OrElse
+               token.IsChildToken(Of InterfaceStatementSyntax)(Function(stmt) stmt.Keyword) OrElse
+               token.IsChildToken(Of ModuleStatementSyntax)(Function(stmt) stmt.Keyword) Then
 
                 If token.GetAncestor(Of TypeStatementSyntax).Modifiers.Any(SyntaxKind.PartialKeyword) Then
                     Return Await CreateItemsAsync(document, position, token, cancellationToken).ConfigureAwait(False)
@@ -65,6 +63,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
         Private Async Function CreateItemsAsync(document As Document, position As Integer, token As SyntaxToken, cancellationToken As CancellationToken) As Task(Of IEnumerable(Of CompletionItem))
             Dim semanticModel = Await document.GetVisualBasicSemanticModelForNodeAsync(token.Parent, cancellationToken).ConfigureAwait(False)
+            Dim syntaxTree = Await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(False)
 
             ' Unless the enclosing symbol is already the global namespace, we want to get it's enclosing symbol
             ' in order to suggest partial types in our namespace.
@@ -80,7 +79,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim textSpan = CompletionUtilities.GetTextChangeSpan(text, position)
 
             Dim compilation = semanticModel.Compilation
-            Dim context = VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken)
+            Dim context = VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken)
 
             Return semanticModel.LookupNamespacesAndTypes(position) _
                                         .OfType(Of INamedTypeSymbol)() _
@@ -90,7 +89,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
         End Function
 
         Private Function MatchesTypeKind(symbol As INamedTypeSymbol, token As SyntaxToken) As Boolean
-            Select Case token.Kind
+            Select Case token.VBKind
                 Case SyntaxKind.ClassKeyword
                     Return symbol.TypeKind = TypeKind.Class
 
@@ -123,7 +122,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim insertionText As String = Nothing
 
             If symbol.MatchesKind(SymbolKind.NamedType) AndAlso symbol.GetArity() > 0 Then
-                displayText = symbol.ToMinimalDisplayString(context.SemanticModel, position, format:=_partialNameFormat)
+                displayText = symbol.ToMinimalDisplayString(context.SemanticModel, position, format:=PartialNameFormat)
                 insertionText = displayText
             Else
                 Dim displayAndInsertionText = CompletionUtilities.GetDisplayAndInsertionText(symbol, isAttributeNameContext:=False, isAfterDot:=False, isWithinAsyncMethod:=False, syntaxFacts:=context.GetLanguageService(Of ISyntaxFactsService))

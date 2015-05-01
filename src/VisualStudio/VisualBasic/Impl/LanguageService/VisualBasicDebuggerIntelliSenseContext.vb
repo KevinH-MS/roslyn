@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Threading
 Imports Microsoft.CodeAnalysis
 Imports Microsoft.CodeAnalysis.Editor
@@ -8,6 +6,7 @@ Imports Microsoft.CodeAnalysis.VisualBasic.Extensions
 Imports Microsoft.CodeAnalysis.VisualBasic.Syntax
 Imports Microsoft.VisualStudio.ComponentModelHost
 Imports Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense
+Imports Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense2
 Imports Microsoft.VisualStudio.Text
 Imports Microsoft.VisualStudio.Text.Editor
 Imports Microsoft.VisualStudio.Text.Projection
@@ -19,9 +18,9 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic
     Friend Class VisualBasicDebuggerIntelliSenseContext
         Inherits AbstractDebuggerIntelliSenseContext
 
-        Private _innerMostContainingNodeIsExpression As Boolean = False
+        Private innerMostContainingNodeIsExpression As Boolean = False
 
-        Public Sub New(wpfTextView As IWpfTextView,
+        Sub New(wpfTextView As IWpfTextView,
                 vsTextView As IVsTextView,
                 debuggerBuffer As IVsTextLines,
                 contextBuffer As ITextBuffer,
@@ -41,7 +40,7 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic
         End Sub
 
         ' Test constructor
-        Public Sub New(wpfTextView As IWpfTextView,
+        Sub New(wpfTextView As IWpfTextView,
                 textBuffer As ITextBuffer,
                 span As TextSpan(),
                 componentModel As IComponentModel,
@@ -65,7 +64,7 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic
                                                                              s.IsExecutableBlock()).FirstOrDefault()
             If containingNode IsNot Nothing Then
                 If TypeOf containingNode Is ExpressionSyntax AndAlso Not IsRightSideOfLocalDeclaration(containingNode) Then
-                    _innerMostContainingNodeIsExpression = True
+                    innerMostContainingNodeIsExpression = True
                     Return containingNode.Span.End
                 Else
                     Dim statement = containingNode.GetExecutableBlockStatements().FirstOrDefault()
@@ -75,7 +74,7 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic
                         ' Something like
                         ' Sub Foo(o as integer)
                         ' [| End Sub |]
-                        Return DirectCast(containingNode, MethodBlockBaseSyntax).EndBlockStatement.SpanStart
+                        Return DirectCast(containingNode, MethodBlockBaseSyntax).End.SpanStart
                     Else
                         Return containingNode.Span.End
                     End If
@@ -108,7 +107,7 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic
             ' intellisense to trigger a new expression context
             Dim forceExpressionContext = ".__o("
 
-            If Not _innerMostContainingNodeIsExpression Then
+            If Not innerMostContainingNodeIsExpression Then
                 ' We're after some statement, could be a for loop, using block, try block, etc, fake a
                 ' local declaration on the following line
                 forceExpressionContext = vbCrLf + "Dim __o = "
@@ -137,5 +136,14 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic
                 Return vbCrLf
             End Get
         End Property
+
+        Friend Overrides Function CreateDebuggerWorkspace(debuggerTextView As DebuggerTextView, buffer As ITextBuffer, contextDocument As Document) As DebuggerWorkspace
+            Return VisualBasicDebuggerWorkspace.Create(debuggerTextView, buffer, contextDocument)
+        End Function
+
+        Friend Overrides Function AssembleProjection(debuggerMappedSpan As ITrackingSpan, contentType As IContentType, projectionFactory As IProjectionBufferFactoryService) As IProjectionBuffer
+            Dim parts = New List(Of Object) From {"Class _C" + vbCrLf + "Sub _B()" + vbCrLf + "Dim __o = ", debuggerMappedSpan, vbCrLf + "End Sub" + vbCrLf + "End Class"}
+            Return projectionFactory.CreateProjectionBuffer(projectionEditResolver:=Nothing, sourceSpans:=parts, contentType:=contentType, options:=ProjectionBufferOptions.None)
+        End Function
     End Class
 End Namespace

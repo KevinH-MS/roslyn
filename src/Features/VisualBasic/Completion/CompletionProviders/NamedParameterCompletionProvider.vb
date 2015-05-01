@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Collections.Immutable
 Imports System.Threading
 Imports Microsoft.CodeAnalysis.Completion
@@ -14,7 +12,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
     Friend Class NamedParameterCompletionProvider
         Inherits AbstractCompletionProvider
 
-        Private Const s_colonEquals As String = ":="
+        Private Const ColonEquals As String = ":="
 
         Public Overrides Function IsCommitCharacter(completionItem As CompletionItem, ch As Char, textTypedSoFar As String) As Boolean
             Return CompletionUtilities.IsCommitCharacter(completionItem, ch, textTypedSoFar)
@@ -32,10 +30,10 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim symbolItem = DirectCast(selectedItem, SymbolCompletionItem)
             If ch.HasValue AndAlso ch.Value = ":"c Then
                 Return New TextChange(symbolItem.FilterSpan,
-                                                     symbolItem.InsertionText.Substring(0, symbolItem.InsertionText.Length - s_colonEquals.Length))
+                                                     symbolItem.InsertionText.Substring(0, symbolItem.InsertionText.Length - ColonEquals.Length))
             ElseIf ch.HasValue AndAlso ch.Value = "="c Then
                 Return New TextChange(selectedItem.FilterSpan,
-                                                     symbolItem.InsertionText.Substring(0, symbolItem.InsertionText.Length - (s_colonEquals.Length - 1)))
+                                                     symbolItem.InsertionText.Substring(0, symbolItem.InsertionText.Length - (ColonEquals.Length - 1)))
             Else
                 Return New TextChange(symbolItem.FilterSpan, symbolItem.InsertionText)
             End If
@@ -46,7 +44,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim token = syntaxTree.FindTokenOnLeftOfPosition(caretPosition, cancellationToken).
                                    GetPreviousTokenIfTouchingWord(caretPosition)
 
-            If token.Kind = SyntaxKind.CommaToken Then
+            If token.VBKind = SyntaxKind.CommaToken Then
                 Dim argumentList = TryCast(token.Parent, ArgumentListSyntax)
                 If argumentList IsNot Nothing Then
                     For Each n In argumentList.Arguments.GetWithSeparators()
@@ -74,7 +72,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim token = syntaxTree.FindTokenOnLeftOfPosition(position, cancellationToken)
             token = token.GetPreviousTokenIfTouchingWord(position)
 
-            If token.Kind <> SyntaxKind.OpenParenToken AndAlso token.Kind <> SyntaxKind.CommaToken Then
+            If token.VBKind <> SyntaxKind.OpenParenToken AndAlso token.VBKind <> SyntaxKind.CommaToken Then
                 Return Nothing
             End If
 
@@ -96,11 +94,11 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
                                                        Where(Function(p) Not existingNamedParameters.Contains(p.Name))
 
             Dim text = Await document.GetTextAsync(cancellationToken).ConfigureAwait(False)
-            Dim context = VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken)
+            Dim context = VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken)
 
             Return unspecifiedParameters.Select(
                 Function(p) New SymbolCompletionItem(
-                    Me, p.Name & s_colonEquals, p.Name.ToIdentifierToken().ToString() & s_colonEquals,
+                    Me, p.Name & ColonEquals, p.Name.ToIdentifierToken().ToString() & ColonEquals,
                     CompletionUtilities.GetTextChangeSpan(text, position), position, SpecializedCollections.SingletonEnumerable(p).ToList(), context))
         End Function
 

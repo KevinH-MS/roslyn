@@ -1,6 +1,4 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Completion;
@@ -38,18 +36,17 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
         ICommandHandler<SurroundWithCommandArgs>,
         ICommandHandler<AutomaticLineEnderCommandArgs>,
         ICommandHandler<SaveCommandArgs>,
-        ICommandHandler<DeleteKeyCommandArgs>,
-        ICommandHandler<SelectAllCommandArgs>
+        ICommandHandler<DeleteKeyCommandArgs>
     {
-        private static readonly object s_controllerPropertyKey = new object();
+        private static readonly object ControllerPropertyKey = new object();
 
-        private readonly IEditorOperationsFactoryService _editorOperationsFactoryService;
-        private readonly ITextUndoHistoryRegistry _undoHistoryRegistry;
-        private readonly IList<Lazy<ICompletionRules, OrderableLanguageMetadata>> _allCompletionRules;
-        private readonly IEnumerable<Lazy<ICompletionProvider, OrderableLanguageMetadata>> _allCompletionProviders;
-        private readonly ImmutableHashSet<char> _autoBraceCompletionChars;
-        private readonly bool _isDebugger;
-        private readonly bool _isImmediateWindow;
+        private readonly IEditorOperationsFactoryService editorOperationsFactoryService;
+        private readonly ITextUndoHistoryRegistry undoHistoryRegistry;
+        private readonly IList<Lazy<ICompletionRules, OrderableLanguageMetadata>> allCompletionRules;
+        private readonly IEnumerable<Lazy<ICompletionProvider, OrderableLanguageMetadata>> allCompletionProviders;
+        private readonly ImmutableHashSet<char> autoBraceCompletionChars;
+        private readonly bool isDebugger;
+        private readonly bool isImmediateWindow;
 
         public Controller(
             ITextView textView,
@@ -65,13 +62,13 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
             bool isImmediateWindow)
             : base(textView, subjectBuffer, presenter, asyncListener, null, "Completion")
         {
-            _editorOperationsFactoryService = editorOperationsFactoryService;
-            _undoHistoryRegistry = undoHistoryRegistry;
-            _allCompletionRules = allCompletionRules;
-            _allCompletionProviders = allCompletionProviders;
-            _autoBraceCompletionChars = autoBraceCompletionChars;
-            _isDebugger = isDebugger;
-            _isImmediateWindow = isImmediateWindow;
+            this.editorOperationsFactoryService = editorOperationsFactoryService;
+            this.undoHistoryRegistry = undoHistoryRegistry;
+            this.allCompletionRules = allCompletionRules;
+            this.allCompletionProviders = allCompletionProviders;
+            this.autoBraceCompletionChars = autoBraceCompletionChars;
+            this.isDebugger = isDebugger;
+            this.isImmediateWindow = isImmediateWindow;
         }
 
         internal static Controller GetInstance(
@@ -85,11 +82,10 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
             IEnumerable<Lazy<ICompletionProvider, OrderableLanguageMetadata>> allCompletionProviders,
             ImmutableHashSet<char> autoBraceCompletionChars)
         {
-            var debuggerTextView = textView as IDebuggerTextView;
-            var isDebugger = debuggerTextView != null;
-            var isImmediateWindow = isDebugger && debuggerTextView.IsImmediateWindow;
+            var isDebugger = subjectBuffer.GetWorkspace().Kind == WorkspaceKind.Debugger;
+            var isImmediateWindow = isDebugger && textView.Properties.ContainsProperty(typeof(IDebuggerTextView));
 
-            return textView.GetOrCreatePerSubjectBufferProperty(subjectBuffer, s_controllerPropertyKey,
+            return textView.GetOrCreatePerSubjectBufferProperty(subjectBuffer, ControllerPropertyKey,
                 (v, b) => new Controller(textView, subjectBuffer, editorOperationsFactoryService, undoHistoryRegistry,
                     presenter, asyncListener,
                     allCompletionRules, allCompletionProviders, autoBraceCompletionChars,
@@ -112,12 +108,6 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
         {
             AssertIsForeground();
             return this.TextView.Caret.Position.BufferPosition;
-        }
-
-        private SnapshotPoint GetCaretPointInSubjectBuffer()
-        {
-            AssertIsForeground();
-            return this.TextView.BufferGraph.MapUpOrDownToBuffer(this.TextView.Caret.Position.BufferPosition, this.SubjectBuffer).GetValueOrDefault();
         }
 
         internal override void OnModelUpdated(Model modelOpt)
@@ -143,7 +133,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
         {
             return StartNewModelComputation(
                 completionService,
-                CompletionTriggerInfo.CreateInvokeCompletionTriggerInfo().WithIsDebugger(_isDebugger).WithIsImmediateWindow(_isImmediateWindow), filterItems, dismissIfEmptyAllowed);
+                CompletionTriggerInfo.CreateInvokeCompletionTriggerInfo().WithIsDebugger(isDebugger).WithIsImmediateWindow(isImmediateWindow), filterItems, dismissIfEmptyAllowed);
         }
 
         private bool StartNewModelComputation(ICompletionService completionService, CompletionTriggerInfo triggerInfo, bool filterItems, bool dismissIfEmptyAllowed = true)
@@ -160,7 +150,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
             if (this.TextView.Caret.Position.VirtualBufferPosition.IsInVirtualSpace)
             {
                 // Convert any virtual whitespace to real whitespace by doing an empty edit at the caret position.
-                _editorOperationsFactoryService.GetEditorOperations(TextView).InsertText("");
+                this.editorOperationsFactoryService.GetEditorOperations(TextView).InsertText("");
             }
 
             var computation = new ModelComputation<Model>(this, PrioritizedTaskScheduler.AboveNormalInstance);
@@ -171,7 +161,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
                 ? GetSnippetCompletionProviders()
                 : GetCompletionProviders();
 
-            sessionOpt.ComputeModel(completionService, triggerInfo, completionProviders, _isDebugger);
+            sessionOpt.ComputeModel(completionService, triggerInfo, completionProviders, isDebugger);
             var filterReason = triggerInfo.TriggerReason == CompletionTriggerReason.BackspaceOrDeleteCommand ? CompletionFilterReason.BackspaceOrDelete : CompletionFilterReason.TypeChar;
             if (filterItems)
             {

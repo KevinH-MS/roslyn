@@ -1,5 +1,3 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -15,7 +13,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
     public abstract class AbstractOptionPageControl : UserControl
     {
         internal readonly IOptionService OptionService;
-        private readonly List<BindingExpressionBase> _bindingExpressions = new List<BindingExpressionBase>();
+        private readonly List<BindingExpressionBase> bindingExpressions = new List<BindingExpressionBase>();
 
         public AbstractOptionPageControl(IServiceProvider serviceProvider)
         {
@@ -45,7 +43,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
             binding.UpdateSourceTrigger = UpdateSourceTrigger.Explicit;
 
             var bindingExpression = checkbox.SetBinding(CheckBox.IsCheckedProperty, binding);
-            _bindingExpressions.Add(bindingExpression);
+            bindingExpressions.Add(bindingExpression);
         }
 
         protected void BindToOption(CheckBox checkbox, PerLanguageOption<bool> optionKey, string languageName)
@@ -57,36 +55,12 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
             binding.UpdateSourceTrigger = UpdateSourceTrigger.Explicit;
 
             var bindingExpression = checkbox.SetBinding(CheckBox.IsCheckedProperty, binding);
-            _bindingExpressions.Add(bindingExpression);
-        }
-
-        protected void BindToOption(TextBox textBox, Option<int> optionKey)
-        {
-            Binding binding = new Binding();
-
-            binding.Source = new OptionBinding<int>(OptionService, optionKey);
-            binding.Path = new PropertyPath("Value");
-            binding.UpdateSourceTrigger = UpdateSourceTrigger.Explicit;
-
-            var bindingExpression = textBox.SetBinding(TextBox.TextProperty, binding);
-            _bindingExpressions.Add(bindingExpression);
-        }
-
-        protected void BindToOption(TextBox textBox, PerLanguageOption<int> optionKey, string languageName)
-        {
-            Binding binding = new Binding();
-
-            binding.Source = new PerLanguageOptionBinding<int>(OptionService, optionKey, languageName);
-            binding.Path = new PropertyPath("Value");
-            binding.UpdateSourceTrigger = UpdateSourceTrigger.Explicit;
-
-            var bindingExpression = textBox.SetBinding(TextBox.TextProperty, binding);
-            _bindingExpressions.Add(bindingExpression);
+            bindingExpressions.Add(bindingExpression);
         }
 
         internal virtual void LoadSettings()
         {
-            foreach (var bindingExpression in _bindingExpressions)
+            foreach (var bindingExpression in bindingExpressions)
             {
                 bindingExpression.UpdateTarget();
             }
@@ -94,7 +68,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
 
         internal virtual void SaveSettings()
         {
-            foreach (var bindingExpression in _bindingExpressions)
+            foreach (var bindingExpression in bindingExpressions)
             {
                 bindingExpression.UpdateSource();
             }

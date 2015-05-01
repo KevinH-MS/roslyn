@@ -1,8 +1,5 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,17 +15,17 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
 {
     internal partial class Dashboard : UserControl, IDisposable
     {
-        private readonly DashboardViewModel _model;
-        private readonly IWpfTextView _textView;
-        private readonly IAdornmentLayer _findAdornmentLayer;
-        private PresentationSource _presentationSource;
-        private DependencyObject _rootDependencyObject;
-        private IInputElement _rootInputElement;
-        private UIElement _focusedElement = null;
-        private readonly List<UIElement> _tabNavigableChildren;
+        private readonly DashboardViewModel model;
+        private readonly IWpfTextView textView;
+        private readonly IAdornmentLayer findAdornmentLayer;
+        private PresentationSource presentationSource;
+        private DependencyObject rootDependencyObject;
+        private IInputElement rootInputElement;
+        private UIElement focusedElement = null;
+        private readonly List<UIElement> tabNavigableChildren;
         internal bool ShouldReceiveKeyboardNavigation { get; set; }
 
-        private IEnumerable<string> _renameAccessKeys = new[]
+        private IEnumerable<string> renameAccessKeys = new[]
             {
                 RenameShortcutKey.RenameOverloads,
                 RenameShortcutKey.SearchInComments,
@@ -41,27 +38,27 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
             DashboardViewModel model,
             IWpfTextView textView)
         {
-            _model = model;
+            this.model = model;
             InitializeComponent();
 
-            _tabNavigableChildren = new UIElement[] { this.OverloadsCheckbox, this.CommentsCheckbox, this.StringsCheckbox, this.PreviewChangesCheckbox, this.ApplyButton, this.CloseButton }.ToList();
+            tabNavigableChildren = new UIElement[] { this.OverloadsCheckbox, this.CommentsCheckbox, this.StringsCheckbox, this.PreviewChangesCheckbox, this.ApplyButton, this.CloseButton }.ToList();
 
-            _textView = textView;
+            this.textView = textView;
             this.DataContext = model;
 
             this.Visibility = textView.HasAggregateFocus ? Visibility.Visible : Visibility.Collapsed;
 
-            _textView.GotAggregateFocus += OnTextViewGotAggregateFocus;
-            _textView.LostAggregateFocus += OnTextViewLostAggregateFocus;
-            _textView.VisualElement.SizeChanged += OnElementSizeChanged;
+            this.textView.GotAggregateFocus += OnTextViewGotAggregateFocus;
+            this.textView.LostAggregateFocus += OnTextViewLostAggregateFocus;
+            this.textView.VisualElement.SizeChanged += OnElementSizeChanged;
             this.SizeChanged += OnElementSizeChanged;
 
             PresentationSource.AddSourceChangedHandler(this, OnPresentationSourceChanged);
 
             try
             {
-                _findAdornmentLayer = textView.GetAdornmentLayer("FindUIAdornmentLayer");
-                ((UIElement)_findAdornmentLayer).LayoutUpdated += FindAdornmentCanvas_LayoutUpdated;
+                this.findAdornmentLayer = textView.GetAdornmentLayer("FindUIAdornmentLayer");
+                ((UIElement)findAdornmentLayer).LayoutUpdated += FindAdornmentCanvas_LayoutUpdated;
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -76,34 +73,34 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
         private void ShowCaret()
         {
             // We actually want the caret visible even though the view isn't explicitly focused.
-            ((UIElement)_textView.Caret).Visibility = Visibility.Visible;
+            ((UIElement)textView.Caret).Visibility = Visibility.Visible;
         }
 
         private void FocusElement(UIElement firstElement, Func<int, int> selector)
         {
-            if (_focusedElement == null)
+            if (focusedElement == null)
             {
-                _focusedElement = firstElement;
+                focusedElement = firstElement;
             }
             else
             {
-                var current = _tabNavigableChildren.IndexOf(_focusedElement);
+                var current = tabNavigableChildren.IndexOf(focusedElement);
                 current = selector(current);
-                _focusedElement = _tabNavigableChildren.ElementAt(current);
+                focusedElement = tabNavigableChildren.ElementAt(current);
             }
-
-            _focusedElement.Focus();
+            
+            focusedElement.Focus();
             ShowCaret();
         }
 
         internal void FocusNextElement()
         {
-            FocusElement(_tabNavigableChildren.First(), i => i == _tabNavigableChildren.Count - 1 ? 0 : i + 1);
+            FocusElement(tabNavigableChildren.First(), i => i == tabNavigableChildren.Count - 1 ? 0 : i + 1);
         }
 
         internal void FocusPreviousElement()
         {
-            FocusElement(_tabNavigableChildren.Last(), i => i == 0 ? _tabNavigableChildren.Count - 1 : i - 1);
+            FocusElement(tabNavigableChildren.Last(), i => i == 0 ? tabNavigableChildren.Count - 1 : i - 1);
         }
 
         private void OnPresentationSourceChanged(object sender, SourceChangedEventArgs args)
@@ -125,33 +122,33 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
                 throw new ArgumentNullException("presentationSource");
             }
 
-            _presentationSource = presentationSource;
+            this.presentationSource = presentationSource;
 
             if (Application.Current != null && Application.Current.MainWindow != null)
             {
-                _rootDependencyObject = Application.Current.MainWindow as DependencyObject;
+                rootDependencyObject = Application.Current.MainWindow as DependencyObject;
             }
             else
             {
-                _rootDependencyObject = _presentationSource.RootVisual as DependencyObject;
+                rootDependencyObject = this.presentationSource.RootVisual as DependencyObject;
             }
 
-            _rootInputElement = _rootDependencyObject as IInputElement;
+            rootInputElement = rootDependencyObject as IInputElement;
 
-            if (_rootDependencyObject != null && _rootInputElement != null)
+            if (rootDependencyObject != null && rootInputElement != null)
             {
-                foreach (string accessKey in _renameAccessKeys)
+                foreach (string accessKey in renameAccessKeys)
                 {
-                    AccessKeyManager.Register(accessKey, _rootInputElement);
+                    AccessKeyManager.Register(accessKey, rootInputElement);
                 }
 
-                AccessKeyManager.AddAccessKeyPressedHandler(_rootDependencyObject, OnAccessKeyPressed);
+                AccessKeyManager.AddAccessKeyPressedHandler(rootDependencyObject, OnAccessKeyPressed);
             }
         }
 
         private void OnAccessKeyPressed(object sender, AccessKeyPressedEventArgs args)
         {
-            foreach (string accessKey in _renameAccessKeys)
+            foreach (string accessKey in renameAccessKeys)
             {
                 if (string.Compare(accessKey, args.Key, StringComparison.OrdinalIgnoreCase) == 0)
                 {
@@ -166,23 +163,23 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
         {
             if (e != null)
             {
-                if (string.Equals(e.Key, RenameShortcutKey.RenameOverloads, StringComparison.OrdinalIgnoreCase))
+                if (string.Compare(e.Key, RenameShortcutKey.RenameOverloads, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     this.OverloadsCheckbox.IsChecked = !this.OverloadsCheckbox.IsChecked;
                 }
-                else if (string.Equals(e.Key, RenameShortcutKey.SearchInComments, StringComparison.OrdinalIgnoreCase))
+                else if (string.Compare(e.Key, RenameShortcutKey.SearchInComments, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     this.CommentsCheckbox.IsChecked = !this.CommentsCheckbox.IsChecked;
                 }
-                else if (string.Equals(e.Key, RenameShortcutKey.SearchInStrings, StringComparison.OrdinalIgnoreCase))
+                else if (string.Compare(e.Key, RenameShortcutKey.SearchInStrings, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     this.StringsCheckbox.IsChecked = !this.StringsCheckbox.IsChecked;
                 }
-                else if (string.Equals(e.Key, RenameShortcutKey.PreviewChanges, StringComparison.OrdinalIgnoreCase))
+                else if (string.Compare(e.Key, RenameShortcutKey.PreviewChanges) == 0)
                 {
                     this.PreviewChangesCheckbox.IsChecked = !this.PreviewChangesCheckbox.IsChecked;
                 }
-                else if (string.Equals(e.Key, RenameShortcutKey.Apply, StringComparison.OrdinalIgnoreCase))
+                else if (string.Compare(e.Key, RenameShortcutKey.Apply) == 0)
                 {
                     this.Commit();
                 }
@@ -191,19 +188,19 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
 
         private void DisonnectFromPresentationSource()
         {
-            if (_rootInputElement != null)
+            if (rootInputElement != null)
             {
-                foreach (string registeredKey in _renameAccessKeys)
+                foreach (string registeredKey in renameAccessKeys)
                 {
-                    AccessKeyManager.Unregister(registeredKey, _rootInputElement);
+                    AccessKeyManager.Unregister(registeredKey, rootInputElement);
                 }
 
-                AccessKeyManager.RemoveAccessKeyPressedHandler(_rootDependencyObject, OnAccessKeyPressed);
+                AccessKeyManager.RemoveAccessKeyPressedHandler(rootDependencyObject, OnAccessKeyPressed);
             }
 
-            _presentationSource = null;
-            _rootDependencyObject = null;
-            _rootInputElement = null;
+            presentationSource = null;
+            rootDependencyObject = null;
+            rootInputElement = null;
         }
 
         private void FindAdornmentCanvas_LayoutUpdated(object sender, EventArgs e)
@@ -212,8 +209,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
         }
 
         public string RenameOverloads { get { return EditorFeaturesResources.RenameOverloads; } }
-        public Visibility RenameOverloadsVisibility { get { return _model.RenameOverloadsVisibility; } }
-        public bool IsRenameOverloadsEditable { get { return _model.IsRenameOverloadsEditable; } }
+        public Visibility RenameOverloadsVisibility { get { return this.model.RenameOverloadsVisibility; } }
         public string SearchInComments { get { return EditorFeaturesResources.SearchInComments; } }
         public string SearchInStrings { get { return EditorFeaturesResources.SearchInStrings; } }
         public string ApplyRename { get { return EditorFeaturesResources.ApplyRename; } }
@@ -231,15 +227,16 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
 
         private void PositionDashboard()
         {
-            var top = _textView.ViewportTop;
-            if (_findAdornmentLayer != null && _findAdornmentLayer.Elements.Count != 0)
+            const int Padding = 10;
+            double top = 0;
+            if (findAdornmentLayer != null && findAdornmentLayer.Elements.Count != 0)
             {
-                var adornment = _findAdornmentLayer.Elements[0].Adornment;
+                var adornment = findAdornmentLayer.Elements[0].Adornment;
                 top += adornment.RenderSize.Height;
             }
 
-            Canvas.SetTop(this, top);
-            Canvas.SetLeft(this, _textView.ViewportLeft + _textView.VisualElement.RenderSize.Width - this.RenderSize.Width);
+            Canvas.SetTop(this, top + Padding);
+            Canvas.SetLeft(this, textView.ViewportLeft + textView.VisualElement.RenderSize.Width - this.RenderSize.Width - Padding);
         }
 
         private void OnTextViewGotAggregateFocus(object sender, EventArgs e)
@@ -255,8 +252,8 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            _model.Session.Cancel();
-            _textView.VisualElement.Focus();
+            this.model.Session.Cancel();
+            this.textView.VisualElement.Focus();
         }
 
         private void Apply_Click(object sender, RoutedEventArgs e)
@@ -266,23 +263,23 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
 
         private void Commit()
         {
-            _model.Session.Commit();
-            _textView.VisualElement.Focus();
+            this.model.Session.Commit();
+            this.textView.VisualElement.Focus();
         }
 
         public void Dispose()
         {
-            _textView.GotAggregateFocus -= OnTextViewGotAggregateFocus;
-            _textView.LostAggregateFocus -= OnTextViewLostAggregateFocus;
-            _textView.VisualElement.SizeChanged -= OnElementSizeChanged;
+            this.textView.GotAggregateFocus -= OnTextViewGotAggregateFocus;
+            this.textView.LostAggregateFocus -= OnTextViewLostAggregateFocus;
+            this.textView.VisualElement.SizeChanged -= OnElementSizeChanged;
             this.SizeChanged -= OnElementSizeChanged;
 
-            if (_findAdornmentLayer != null)
+            if (findAdornmentLayer != null)
             {
-                ((UIElement)_findAdornmentLayer).LayoutUpdated -= FindAdornmentCanvas_LayoutUpdated;
+                ((UIElement)findAdornmentLayer).LayoutUpdated -= FindAdornmentCanvas_LayoutUpdated;
             }
 
-            _model.Dispose();
+            this.model.Dispose();
             PresentationSource.RemoveSourceChangedHandler(this, OnPresentationSourceChanged);
         }
 

@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Threading
 Imports Microsoft.CodeAnalysis.Completion
 Imports Microsoft.CodeAnalysis.Completion.Providers
@@ -89,21 +87,21 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
         End Function
 
         ' PERF: Cached values for GetDisplayAndInsertionText. Cuts down on the number of calls to ToMinimalDisplayString for large enums.
-        Private _cachedDisplayAndInsertionTextContainingType As INamedTypeSymbol
-        Private _cachedDisplayAndInsertionTextContext As AbstractSyntaxContext
-        Private _cachedDisplayAndInsertionTextContainingTypeText As String
+        Private cachedDisplayAndInsertionTextContainingType As INamedTypeSymbol
+        Private cachedDisplayAndInsertionTextContext As AbstractSyntaxContext
+        Private cachedDisplayAndInsertionTextContainingTypeText As String
 
         Protected Overrides Function GetDisplayAndInsertionText(symbol As ISymbol, context As AbstractSyntaxContext) As ValueTuple(Of String, String)
             If symbol.ContainingType IsNot Nothing AndAlso symbol.ContainingType.TypeKind = TypeKind.Enum Then
-                If _cachedDisplayAndInsertionTextContainingType IsNot symbol.ContainingType OrElse _cachedDisplayAndInsertionTextContext IsNot context Then
+                If cachedDisplayAndInsertionTextContainingType IsNot symbol.ContainingType OrElse cachedDisplayAndInsertionTextContext IsNot context Then
                     Dim displayFormat = SymbolDisplayFormat.MinimallyQualifiedFormat.WithMemberOptions(SymbolDisplayMemberOptions.IncludeContainingType).WithLocalOptions(SymbolDisplayLocalOptions.None)
                     Dim displayService = context.GetLanguageService(Of ISymbolDisplayService)()
-                    _cachedDisplayAndInsertionTextContainingTypeText = displayService.ToMinimalDisplayString(context.SemanticModel, context.Position, symbol.ContainingType, displayFormat)
-                    _cachedDisplayAndInsertionTextContainingType = symbol.ContainingType
-                    _cachedDisplayAndInsertionTextContext = context
+                    cachedDisplayAndInsertionTextContainingTypeText = displayService.ToMinimalDisplayString(context.SemanticModel, context.Position, symbol.ContainingType, displayFormat)
+                    cachedDisplayAndInsertionTextContainingType = symbol.ContainingType
+                    cachedDisplayAndInsertionTextContext = context
                 End If
 
-                Dim text As String = _cachedDisplayAndInsertionTextContainingTypeText & "." & symbol.Name
+                Dim text As String = cachedDisplayAndInsertionTextContainingTypeText & "." & symbol.Name
                 Return ValueTuple.Create(text, text)
             End If
 
@@ -125,7 +123,8 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
         Protected Overrides Async Function CreateContext(document As Document, position As Integer, cancellationToken As CancellationToken) As Task(Of AbstractSyntaxContext)
             Dim semanticModel = Await document.GetSemanticModelForSpanAsync(New TextSpan(position, 0), cancellationToken).ConfigureAwait(False)
-            Return Extensions.ContextQuery.VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken)
+            Dim syntaxTree = Await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(False)
+            Return Extensions.ContextQuery.VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken)
         End Function
 
         Protected Overrides Function CreateItem(displayAndInsertionText As ValueTuple(Of String, String), position As Integer, symbols As List(Of ISymbol), context As AbstractSyntaxContext, textChangeSpan As TextSpan, preselect As Boolean, supportedPlatformData As SupportedPlatformData) As CompletionItem

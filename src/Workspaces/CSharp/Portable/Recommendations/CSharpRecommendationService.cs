@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -24,9 +24,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
     internal class CSharpRecommendationService : AbstractRecommendationService
     {
         protected override Tuple<IEnumerable<ISymbol>, AbstractSyntaxContext> GetRecommendedSymbolsAtPositionWorker(
-            Workspace workspace, SemanticModel semanticModel, int position, OptionSet options, CancellationToken cancellationToken)
+            Workspace workspace, SemanticModel semanticModel, SyntaxTree syntaxTree, int position, OptionSet options, CancellationToken cancellationToken)
         {
-            var context = CSharpSyntaxContext.CreateContext(workspace, semanticModel, position, cancellationToken);
+            var context = CSharpSyntaxContext.CreateContext(workspace, semanticModel, syntaxTree, position, cancellationToken);
 
             var filterOutOfScopeLocals = options.GetOption(RecommendationOptions.FilterOutOfScopeLocals, semanticModel.Language);
             var symbols = GetSymbolsWorker(context, filterOutOfScopeLocals, cancellationToken);
@@ -75,13 +75,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
                 // Script and interactive
                 return GetSymbolsForGlobalStatementContext(context, cancellationToken);
             }
-            else if (context.IsAnyExpressionContext ||
-                     context.IsStatementContext ||
-                     context.SyntaxTree.IsDefiniteCastTypeContext(context.Position, context.LeftToken, cancellationToken))
+            else if (context.IsAnyExpressionContext || context.IsStatementContext)
             {
-                // GitHub #717: With automatic brace completion active, typing '(i' produces "(i)", which gets parsed as
-                // as cast. The user might be trying to type a parenthesized expression, so even though a cast
-                // is a type-only context, we'll show all symbols anyway.
                 return GetSymbolsForExpressionOrStatementContext(context, filterOutOfScopeLocals, cancellationToken);
             }
             else if (context.IsTypeContext || context.IsNamespaceContext)
@@ -98,7 +93,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
             }
             else if (context.IsDestructorTypeContext)
             {
-                return SpecializedCollections.SingletonEnumerable(context.SemanticModel.GetDeclaredSymbol(context.ContainingTypeOrEnumDeclaration, cancellationToken));
+                return SpecializedCollections.SingletonEnumerable(context.SemanticModel.GetDeclaredSymbol(context.ContainingTypeOrEnumDeclaration));
             }
 
             return SpecializedCollections.EmptyEnumerable<ISymbol>();
@@ -111,26 +106,26 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
             // Ensure that we have the correct token in A.B| case
             var node = context.TargetToken.Parent;
 
-            if (node.Kind() == SyntaxKind.SimpleMemberAccessExpression)
+            if (node.CSharpKind() == SyntaxKind.SimpleMemberAccessExpression)
             {
                 return GetSymbolsOffOfExpression(context, ((MemberAccessExpressionSyntax)node).Expression, cancellationToken);
             }
-            else if (node.Kind() == SyntaxKind.PointerMemberAccessExpression)
+            else if (node.CSharpKind() == SyntaxKind.PointerMemberAccessExpression)
             {
                 return GetSymbolsOffOfDereferencedExpression(context, ((MemberAccessExpressionSyntax)node).Expression, cancellationToken);
             }
-            else if (node.Kind() == SyntaxKind.QualifiedName)
+            else if (node.CSharpKind() == SyntaxKind.QualifiedName)
             {
                 return GetSymbolsOffOfName(context, ((QualifiedNameSyntax)node).Left, cancellationToken);
             }
-            else if (node.Kind() == SyntaxKind.AliasQualifiedName)
+            else if (node.CSharpKind() == SyntaxKind.AliasQualifiedName)
             {
                 return GetSymbolsOffOffAlias(context, ((AliasQualifiedNameSyntax)node).Alias, cancellationToken);
             }
-            else if (node.Kind() == SyntaxKind.MemberBindingExpression)
+            else if (node.CSharpKind() == SyntaxKind.MemberBindingExpression)
             {
-                var parentConditionalAccess = node.GetParentConditionalAccessExpression();
-                return GetSymbolsOffOfConditionalReceiver(context, parentConditionalAccess.Expression, cancellationToken);
+                var parentConditionalAccess = node.GetAncestor<ConditionalAccessExpressionSyntax>();
+                return GetSymbolsOffOfExpression(context, parentConditionalAccess.Expression, cancellationToken);
             }
             else
             {
@@ -155,7 +150,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
             // using System;
             // |
 
-            if (token.Kind() == SyntaxKind.SemicolonToken &&
+            if (token.CSharpKind() == SyntaxKind.SemicolonToken &&
                 token.Parent.IsKind(SyntaxKind.UsingDirective) &&
                 position >= token.Span.End)
             {
@@ -178,7 +173,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
         {
             var enclosingSymbol = context.LeftToken.Parent
                 .AncestorsAndSelf()
-                .Select(n => context.SemanticModel.GetDeclaredSymbol(n, cancellationToken))
+                .Select(n => context.SemanticModel.GetDeclaredSymbol(n))
                 .WhereNotNull()
                 .FirstOrDefault();
 
@@ -354,6 +349,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
             var leftHandBinding = context.SemanticModel.GetSymbolInfo(expression, cancellationToken);
             var container = context.SemanticModel.GetTypeInfo(expression, cancellationToken).Type;
 
+            // TODO remove this when 531549 which causes GetTypeInfo to return an error type is fixed
+            if (container.IsErrorType())
+            {
+                container = leftHandBinding.Symbol.GetSymbolType() as ITypeSymbol;
+            }
+
             var normalSymbols = GetSymbolsOffOfBoundExpression(context, originalExpression, expression, leftHandBinding, container, cancellationToken);
 
             // Check for the Color Color case.
@@ -381,29 +382,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
             if (container is IPointerTypeSymbol)
             {
                 container = ((IPointerTypeSymbol)container).PointedAtType;
-            }
-
-            return GetSymbolsOffOfBoundExpression(context, originalExpression, expression, leftHandBinding, container, cancellationToken);
-        }
-
-        private static IEnumerable<ISymbol> GetSymbolsOffOfConditionalReceiver(
-            CSharpSyntaxContext context,
-            ExpressionSyntax originalExpression,
-            CancellationToken cancellationToken)
-        {
-            // Given ((T?)t)?.|, the '.' will behave as if the expression was actually ((T)t).|. More plainly,
-            // a member access off of a conitional receiver of nullable type binds to the unwrapped nullable
-            // type. This is not exposed via the binding information for the LHS, so repeat this work here.
-
-            var expression = originalExpression.WalkDownParentheses();
-            var leftHandBinding = context.SemanticModel.GetSymbolInfo(expression, cancellationToken);
-            var container = context.SemanticModel.GetTypeInfo(expression, cancellationToken).Type.RemoveNullableIfPresent();
-
-            // If the thing on the left is a type, namespace, or alias, we shouldn't show anything in
-            // IntelliSense.
-            if (leftHandBinding.GetBestOrAllSymbols().FirstOrDefault().MatchesKind(SymbolKind.NamedType, SymbolKind.Namespace, SymbolKind.Alias))
-            {
-                return SpecializedCollections.EmptyEnumerable<ISymbol>();
             }
 
             return GetSymbolsOffOfBoundExpression(context, originalExpression, expression, leftHandBinding, container, cancellationToken);
@@ -505,6 +483,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Recommendations
             // Show static and instance members.
             if (context.IsNameOfContext)
             {
+                if (symbol != null && !(symbol.MatchesKind(SymbolKind.NamedType) || symbol.MatchesKind(SymbolKind.Namespace)))
+                {
+                    return SpecializedCollections.EmptyEnumerable<ISymbol>();
+                }
+
                 excludeInstance = false;
                 excludeStatic = false;
             }

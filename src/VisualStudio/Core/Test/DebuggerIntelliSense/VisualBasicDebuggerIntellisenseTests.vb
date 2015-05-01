@@ -1,6 +1,4 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-Imports Roslyn.Test.Utilities
+﻿Imports Roslyn.Test.Utilities
 
 Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.DebuggerIntelliSense
     Public Class VisualBasicDebuggerIntellisenseTests
@@ -182,7 +180,12 @@ End Module</Document>
                            <Project Language="Visual Basic" CommonReferences="true">
                                <Document>$$</Document>
 
-                               <Document>Module Program
+                               <Document>
+Class C
+    Sub New(x as Integer)
+    End Sub
+End Class
+                                   Module Program
     Sub Main(args As String())
         Dim xx as String = "boo"
         [|Dim y = 3|]
@@ -192,7 +195,7 @@ End Module</Document>
                            </Project>
                        </Workspace>
             Using state = TestState.CreateVisualBasicTestState(text, False)
-                state.SendTypeChars("new String(")
+                state.SendTypeChars("new C(")
                 state.AssertSignatureHelpSession()
             End Using
         End Sub

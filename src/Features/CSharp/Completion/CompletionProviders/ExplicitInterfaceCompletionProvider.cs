@@ -1,6 +1,4 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,7 +60,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                                  .GetPreviousTokenIfTouchingWord(position)
                                  .Parent;
 
-            if (node.Kind() == SyntaxKind.ExplicitInterfaceSpecifier)
+            if (node.CSharpKind() == SyntaxKind.ExplicitInterfaceSpecifier)
             {
                 return await GetCompletionsOffOfExplicitInterfaceAsync(
                     document, semanticModel, position, ((ExplicitInterfaceSpecifierSyntax)node).Name, cancellationToken).ConfigureAwait(false);
@@ -77,7 +75,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
             // Bind the interface name which is to the left of the dot
             var syntaxTree = semanticModel.SyntaxTree;
             var nameBinding = semanticModel.GetSymbolInfo(name, cancellationToken);
-            var context = CSharpSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken);
+            var context = CSharpSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken);
 
             var symbol = nameBinding.Symbol as ITypeSymbol;
             if (symbol == null || symbol.TypeKind != TypeKind.Interface)

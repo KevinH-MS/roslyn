@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -12,6 +12,7 @@ namespace Microsoft.CodeAnalysis.Recommendations
     {
         public static IEnumerable<ISymbol> GetRecommendedSymbolsAtPosition(
             SemanticModel semanticModel,
+            SyntaxTree syntaxTree,
             int position,
             Workspace workspace,
             OptionSet options = null,
@@ -20,7 +21,7 @@ namespace Microsoft.CodeAnalysis.Recommendations
             options = options ?? workspace.Options;
             var languageRecommender = workspace.Services.GetLanguageServices(semanticModel.Language).GetService<IRecommendationService>();
 
-            return languageRecommender.GetRecommendedSymbolsAtPosition(workspace, semanticModel, position, options, cancellationToken);
+            return languageRecommender.GetRecommendedSymbolsAtPosition(workspace, semanticModel, syntaxTree, position, options, cancellationToken);
         }
     }
 }

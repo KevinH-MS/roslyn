@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Diagnostics;
 
@@ -13,30 +13,30 @@ namespace Microsoft.CodeAnalysis.FindSymbols
         [DebuggerDisplay("{GetDebuggerDisplay(),nq}")]
         private struct Node
         {
-            private readonly string _name;
-            private readonly int _parentIndex;
+            private readonly string name;
+            private readonly int parentIndex;
 
             public const int RootNodeParentIndex = -1;
 
             public Node(string name, int parentIndex)
             {
-                _name = name;
-                _parentIndex = parentIndex;
+                this.name = name;
+                this.parentIndex = parentIndex;
             }
 
             public string Name
             {
-                get { return _name; }
+                get { return this.name; }
             }
 
             public int ParentIndex
             {
-                get { return _parentIndex; }
+                get { return this.parentIndex; }
             }
 
             public bool IsRoot
             {
-                get { return _parentIndex == RootNodeParentIndex; }
+                get { return this.parentIndex == RootNodeParentIndex; }
             }
 
             public bool IsEquivalent(Node node)
@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.FindSymbols
 
             private string GetDebuggerDisplay()
             {
-                return _name + ", " + _parentIndex;
+                return name + ", " + parentIndex;
             }
         }
     }

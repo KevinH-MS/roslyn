@@ -1,5 +1,3 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,7 +54,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                     var newToken = tokenOnLeftOfPosition.GetPreviousTokenIfTouchingWord(position);
 
                     // Only after 'new'.
-                    if (newToken.Kind() == SyntaxKind.NewKeyword)
+                    if (newToken.CSharpKind() == SyntaxKind.NewKeyword)
                     {
                         // Only if the 'new' belongs to an object creation expression (and isn't a 'new'
                         // modifier on a member).
@@ -73,8 +71,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
 
         protected override async Task<AbstractSyntaxContext> CreateContext(Document document, int position, CancellationToken cancellationToken)
         {
-            var semanticModel = await document.GetCSharpSemanticModelForSpanAsync(new TextSpan(position, 0), cancellationToken).ConfigureAwait(false);
-            return CSharpSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken);
+            var semanticModel = await document.GetCSharpSemanticModelForSpanAsync(new TextSpan(position, 0)).ConfigureAwait(false);
+            var syntaxTree = await document.GetCSharpSyntaxTreeAsync(cancellationToken).ConfigureAwait(false);
+            return CSharpSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken);
         }
 
         protected override string GetInsertionText(ISymbol symbol, AbstractSyntaxContext context, char ch)
@@ -101,7 +100,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                     return SpecializedCollections.SingletonEnumerable(alias);
                 }
             }
-
+            
             return result;
         }
 

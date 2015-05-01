@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -10,11 +10,12 @@ namespace Microsoft.CodeAnalysis.Shared.Extensions.ContextQuery
 {
     internal abstract class AbstractSyntaxContext
     {
-        private ISet<INamedTypeSymbol> _outerTypes;
+        private ISet<INamedTypeSymbol> outerTypes;
 
         protected AbstractSyntaxContext(
             Workspace workspace,
             SemanticModel semanticModel,
+            SyntaxTree syntaxTree,
             int position,
             SyntaxToken leftToken,
             SyntaxToken targetToken,
@@ -30,9 +31,11 @@ namespace Microsoft.CodeAnalysis.Shared.Extensions.ContextQuery
             bool isInQuery,
             bool isInImportsDirective)
         {
+            Contract.ThrowIfNull(semanticModel);
+
             this.Workspace = workspace;
             this.SemanticModel = semanticModel;
-            this.SyntaxTree = semanticModel.SyntaxTree;
+            this.SyntaxTree = syntaxTree;
             this.Position = position;
             this.LeftToken = leftToken;
             this.TargetToken = targetToken;
@@ -49,28 +52,28 @@ namespace Microsoft.CodeAnalysis.Shared.Extensions.ContextQuery
             this.IsInImportsDirective = isInImportsDirective;
         }
 
-        public Workspace Workspace { get; }
-        public SemanticModel SemanticModel { get; }
-        public SyntaxTree SyntaxTree { get; }
-        public int Position { get; }
+        public Workspace Workspace { get; private set; }
+        public SemanticModel SemanticModel { get; private set; }
+        public SyntaxTree SyntaxTree { get; private set; }
+        public int Position { get; private set; }
 
-        public SyntaxToken LeftToken { get; }
-        public SyntaxToken TargetToken { get; }
+        public SyntaxToken LeftToken { get; private set; }
+        public SyntaxToken TargetToken { get; private set; }
 
-        public bool IsTypeContext { get; }
-        public bool IsNamespaceContext { get; }
+        public bool IsTypeContext { get; private set; }
+        public bool IsNamespaceContext { get; private set; }
 
-        public bool IsPreProcessorDirectiveContext { get; }
+        public bool IsPreProcessorDirectiveContext { get; private set; }
 
-        public bool IsRightOfNameSeparator { get; }
-        public bool IsStatementContext { get; }
-        public bool IsAnyExpressionContext { get; }
-        public bool IsAttributeNameContext { get; }
-        public bool IsEnumTypeMemberAccessContext { get; }
-        public bool IsNameOfContext { get; }
+        public bool IsRightOfNameSeparator { get; private set; }
+        public bool IsStatementContext { get; private set; }
+        public bool IsAnyExpressionContext { get; private set; }
+        public bool IsAttributeNameContext { get; private set; }
+        public bool IsEnumTypeMemberAccessContext { get; private set; }
+        public bool IsNameOfContext { get; private set; }
 
-        public bool IsInQuery { get; }
-        public bool IsInImportsDirective { get; }
+        public bool IsInQuery { get; private set; }
+        public bool IsInImportsDirective { get; private set; }
 
         private ISet<INamedTypeSymbol> ComputeOuterTypes(CancellationToken cancellationToken)
         {
@@ -89,12 +92,12 @@ namespace Microsoft.CodeAnalysis.Shared.Extensions.ContextQuery
 
         public ISet<INamedTypeSymbol> GetOuterTypes(CancellationToken cancellationToken)
         {
-            if (_outerTypes == null)
+            if (this.outerTypes == null)
             {
-                Interlocked.CompareExchange(ref _outerTypes, ComputeOuterTypes(cancellationToken), null);
+                Interlocked.CompareExchange(ref this.outerTypes, ComputeOuterTypes(cancellationToken), null);
             }
 
-            return _outerTypes;
+            return this.outerTypes;
         }
 
         public TService GetLanguageService<TService>() where TService : class, ILanguageService

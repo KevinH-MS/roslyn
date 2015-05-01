@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Threading
 Imports Microsoft.CodeAnalysis.Completion
 Imports Microsoft.CodeAnalysis.Completion.Providers
@@ -10,7 +8,6 @@ Imports Microsoft.CodeAnalysis.Recommendations
 Imports Microsoft.CodeAnalysis.Shared.Extensions.ContextQuery
 Imports Microsoft.CodeAnalysis.Text
 Imports Microsoft.CodeAnalysis.VisualBasic.Extensions.ContextQuery
-Imports Microsoft.CodeAnalysis.VisualBasic.Syntax
 
 Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
@@ -18,7 +15,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
         Inherits AbstractSymbolCompletionProvider
 
         Protected Overrides Function GetSymbolsWorker(context As AbstractSyntaxContext, position As Integer, options As OptionSet, cancellationToken As CancellationToken) As Task(Of IEnumerable(Of ISymbol))
-            Return Task.FromResult(Recommender.GetRecommendedSymbolsAtPosition(context.SemanticModel, position, context.Workspace, options, cancellationToken))
+            Return Task.FromResult(Recommender.GetRecommendedSymbolsAtPosition(context.SemanticModel, context.SyntaxTree, position, context.Workspace, options, cancellationToken))
         End Function
 
         Protected Overrides Function GetTextChangeSpan(text As SourceText, position As Integer) As TextSpan
@@ -62,20 +59,11 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             ' don't want to trigger after a number.  All other cases after dot are ok.
             Dim root = Await document.GetVisualBasicSyntaxRootAsync(cancellationToken).ConfigureAwait(False)
             Dim token = root.FindToken(characterPosition)
-            Return IsValidTriggerToken(token)
-        End Function
-
-        Private Function IsValidTriggerToken(token As SyntaxToken) As Boolean
-            If token.Kind <> SyntaxKind.DotToken Then
-                Return False
+            If token.VBKind = SyntaxKind.DotToken Then
+                token = token.GetPreviousToken()
             End If
 
-            Dim previousToken = token.GetPreviousToken()
-            If previousToken.Kind = SyntaxKind.IntegerLiteralToken Then
-                Return token.Parent.Kind <> SyntaxKind.SimpleMemberAccessExpression OrElse Not DirectCast(token.Parent, MemberAccessExpressionSyntax).Expression.IsKind(SyntaxKind.NumericLiteralExpression)
-            End If
-
-            Return True
+            Return token.VBKind <> SyntaxKind.IntegerLiteralToken
         End Function
 
         Public Overrides Function SendEnterThroughToEditor(completionItem As CompletionItem, textTypedSoFar As String) As Boolean
@@ -93,7 +81,8 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
         Protected Overrides Async Function CreateContext(document As Document, position As Integer, cancellationToken As CancellationToken) As Task(Of AbstractSyntaxContext)
             Dim semanticModel = Await document.GetSemanticModelForSpanAsync(New TextSpan(position, 0), cancellationToken).ConfigureAwait(False)
-            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken)
+            Dim syntaxTree = Await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(False)
+            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken)
         End Function
 
         Protected Overrides Function GetFilterText(symbol As ISymbol, displayText As String, context As AbstractSyntaxContext) As String

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -13,12 +13,12 @@ namespace Microsoft.CodeAnalysis.Recommendations
     internal abstract class AbstractRecommendationService : IRecommendationService
     {
         protected abstract Tuple<IEnumerable<ISymbol>, AbstractSyntaxContext> GetRecommendedSymbolsAtPositionWorker(
-            Workspace workspace, SemanticModel semanticModel, int position, OptionSet options, CancellationToken cancellationToken);
+            Workspace workspace, SemanticModel semanticModel, SyntaxTree syntaxTree, int position, OptionSet options, CancellationToken cancellationToken);
 
         public IEnumerable<ISymbol> GetRecommendedSymbolsAtPosition(
-            Workspace workspace, SemanticModel semanticModel, int position, OptionSet options, CancellationToken cancellationToken)
+            Workspace workspace, SemanticModel semanticModel, SyntaxTree syntaxTree, int position, OptionSet options, CancellationToken cancellationToken)
         {
-            var result = GetRecommendedSymbolsAtPositionWorker(workspace, semanticModel, position, options, cancellationToken);
+            var result = GetRecommendedSymbolsAtPositionWorker(workspace, semanticModel, syntaxTree, position, options, cancellationToken);
 
             var symbols = result.Item1;
             var context = result.Item2;

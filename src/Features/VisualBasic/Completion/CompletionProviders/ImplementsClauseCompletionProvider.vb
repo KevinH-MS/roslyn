@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Collections.Immutable
 Imports System.Threading
 Imports Microsoft.CodeAnalysis
@@ -34,7 +32,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
         End Function
 
         Protected Overrides Function GetSymbolsWorker(context As AbstractSyntaxContext, position As Integer, options As OptionSet, cancellationToken As CancellationToken) As Task(Of IEnumerable(Of ISymbol))
-            If context.TargetToken.Kind = SyntaxKind.None Then
+            If context.TargetToken.VBKind = SyntaxKind.None Then
                 Return SpecializedTasks.EmptyEnumerable(Of ISymbol)()
             End If
 
@@ -47,15 +45,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim memberKindKeyword As SyntaxKind = Nothing
             Dim methodDeclaration = context.TargetToken.GetAncestor(Of MethodStatementSyntax)()
             If methodDeclaration IsNot Nothing Then
-                memberKindKeyword = methodDeclaration.DeclarationKeyword.Kind
+                memberKindKeyword = methodDeclaration.Keyword.VBKind
             End If
             Dim propertyDeclaration = context.TargetToken.GetAncestor(Of PropertyStatementSyntax)()
             If propertyDeclaration IsNot Nothing Then
-                memberKindKeyword = propertyDeclaration.DeclarationKeyword.Kind
+                memberKindKeyword = propertyDeclaration.Keyword.VBKind
             End If
             Dim eventDeclaration = context.TargetToken.GetAncestor(Of EventStatementSyntax)()
             If eventDeclaration IsNot Nothing Then
-                memberKindKeyword = eventDeclaration.DeclarationKeyword.Kind
+                memberKindKeyword = eventDeclaration.Keyword.VBKind
             End If
 
             ' We couldn't find a declaration. Bail.
@@ -66,11 +64,11 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim result As IEnumerable(Of ISymbol) = Nothing
 
             ' Valid positions: Immediately after 'Implements, after  ., or after a ,
-            If context.TargetToken.Kind = SyntaxKind.ImplementsKeyword AndAlso context.TargetToken.Parent.IsKind(SyntaxKind.ImplementsClause) Then
+            If context.TargetToken.VBKind = SyntaxKind.ImplementsKeyword AndAlso context.TargetToken.Parent.IsKind(SyntaxKind.ImplementsClause) Then
                 result = GetInterfacesAndContainers(position, context.TargetToken.Parent, context.SemanticModel, memberKindKeyword, cancellationToken)
             End If
 
-            If context.TargetToken.Kind = SyntaxKind.CommaToken AndAlso context.TargetToken.Parent.IsKind(SyntaxKind.ImplementsClause) Then
+            If context.TargetToken.VBKind = SyntaxKind.CommaToken AndAlso context.TargetToken.Parent.IsKind(SyntaxKind.ImplementsClause) Then
                 result = GetInterfacesAndContainers(position, context.TargetToken.Parent, context.SemanticModel, memberKindKeyword, cancellationToken)
             End If
 
@@ -291,7 +289,8 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
         Protected Overrides Async Function CreateContext(document As Document, position As Integer, cancellationToken As CancellationToken) As Task(Of AbstractSyntaxContext)
             Dim semanticModel = Await document.GetSemanticModelForSpanAsync(New TextSpan(position, 0), cancellationToken).ConfigureAwait(False)
-            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken)
+            Dim syntaxTree = Await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(False)
+            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken)
         End Function
     End Class
 End Namespace

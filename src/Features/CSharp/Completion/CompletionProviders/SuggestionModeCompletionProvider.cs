@@ -1,5 +1,3 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Linq;
 using System.Threading;
@@ -66,7 +64,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
             {
                 var text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
 
-                if (triggerInfo.IsDebugger && triggerInfo.IsImmediateWindow)
+                // To enable typing lambdas in watches/locals, always show the builder
+                // while debugging (we can't use type inference to figure it out).
+                if (triggerInfo.IsDebugger)
                 {
                     // Aggressive Intellisense in the debugger: always show the builder 
                     return new CompletionItem(this, "", CompletionUtilities.GetTextChangeSpan(text, position), isBuilder: true);
@@ -75,7 +75,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                 var tree = await document.GetCSharpSyntaxTreeAsync(cancellationToken).ConfigureAwait(false);
                 var token = tree.FindTokenOnLeftOfPosition(position, cancellationToken);
                 token = token.GetPreviousTokenIfTouchingWord(position);
-                if (token.Kind() == SyntaxKind.None)
+                if (token.CSharpKind() == SyntaxKind.None)
                 {
                     return null;
                 }
@@ -139,7 +139,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
             {
                 // We'll show the builder after an open brace or comma, because that's where the
                 // user can start declaring new named parts. 
-                return token.Kind() == SyntaxKind.OpenBraceToken || token.Kind() == SyntaxKind.CommaToken;
+                return token.CSharpKind() == SyntaxKind.OpenBraceToken || token.CSharpKind() == SyntaxKind.CommaToken;
             }
 
             return false;
@@ -150,13 +150,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
             // Typing a generic type parameter, the tree might look like a binary expression around the < token.
             // If we infer a delegate type here (because that's what on the other side of the binop), 
             // ignore it.
-            if (token.Kind() == SyntaxKind.LessThanToken && token.Parent is BinaryExpressionSyntax)
+            if (token.CSharpKind() == SyntaxKind.LessThanToken && token.Parent is BinaryExpressionSyntax)
             {
                 return false;
             }
 
             // We might be in the arguments to a parenthsized lambda
-            if (token.Kind() == SyntaxKind.OpenParenToken || token.Kind() == SyntaxKind.CommaToken)
+            if (token.CSharpKind() == SyntaxKind.OpenParenToken || token.CSharpKind() == SyntaxKind.CommaToken)
             {
                 if (token.Parent != null && token.Parent is ParameterListSyntax)
                 {
@@ -166,16 +166,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
 
             // Walk up a single level to allow for typing the beginning of a lambda:
             // new AssemblyLoadEventHandler(($$
-            if (token.Kind() == SyntaxKind.OpenParenToken &&
-                token.Parent.Kind() == SyntaxKind.ParenthesizedExpression)
+            if (token.CSharpKind() == SyntaxKind.OpenParenToken &&
+                token.Parent.CSharpKind() == SyntaxKind.ParenthesizedExpression)
             {
                 position = token.Parent.SpanStart;
             }
 
             // WorkItem 834609: Automatic brace completion inserts the closing paren, making it
             // like a cast.
-            if (token.Kind() == SyntaxKind.OpenParenToken &&
-                token.Parent.Kind() == SyntaxKind.CastExpression)
+            if (token.CSharpKind() == SyntaxKind.OpenParenToken &&
+                token.Parent.CSharpKind() == SyntaxKind.CastExpression)
             {
                 position = token.Parent.SpanStart;
             }

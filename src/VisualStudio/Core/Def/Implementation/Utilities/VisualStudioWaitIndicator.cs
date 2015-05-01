@@ -1,5 +1,3 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.ComponentModel.Composition;
 using System.Threading;
@@ -18,19 +16,21 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Utilities
     [Export(typeof(IWaitIndicator))]
     internal sealed class VisualStudioWaitIndicator : IWaitIndicator
     {
-        private readonly SVsServiceProvider _serviceProvider;
+        private readonly SVsServiceProvider serviceProvider;
 
-        private static readonly Func<string, string, string> s_messageGetter = (t, m) => string.Format("{0} : {1}", t, m);
+        private static readonly Func<string, string, string> messageGetter = (t, m) => string.Format("{0} : {1}", t, m);
+        private readonly VisualStudioWorkspace visualStudioWorkspace;
 
         [ImportingConstructor]
-        public VisualStudioWaitIndicator(SVsServiceProvider serviceProvider)
+        public VisualStudioWaitIndicator(SVsServiceProvider serviceProvider, VisualStudioWorkspace visualStudioWorkspace)
         {
-            _serviceProvider = serviceProvider;
+            this.serviceProvider = serviceProvider;
+            this.visualStudioWorkspace = visualStudioWorkspace;
         }
 
         public WaitIndicatorResult Wait(string title, string message, bool allowCancel, Action<IWaitContext> action)
         {
-            using (Logger.LogBlock(FunctionId.Misc_VisualStudioWaitIndicator_Wait, s_messageGetter, title, message, CancellationToken.None))
+            using (Logger.LogBlock(FunctionId.Misc_VisualStudioWaitIndicator_Wait, messageGetter, title, message, CancellationToken.None))
             using (var waitContext = StartWait(title, message, allowCancel))
             {
                 try
@@ -60,14 +60,13 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Utilities
 
         private VisualStudioWaitContext StartWait(string title, string message, bool allowCancel)
         {
-            var componentModel = (IComponentModel)_serviceProvider.GetService(typeof(SComponentModel));
-            var workspace = componentModel.GetService<VisualStudioWorkspace>();
-            Contract.ThrowIfNull(workspace);
+            var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
+            Contract.ThrowIfNull(visualStudioWorkspace);
 
-            var notificationService = workspace.Services.GetService<IGlobalOperationNotificationService>();
+            var notificationService = visualStudioWorkspace.Services.GetService<IGlobalOperationNotificationService>();
             Contract.ThrowIfNull(notificationService);
 
-            var dialogFactory = (IVsThreadedWaitDialogFactory)_serviceProvider.GetService(typeof(SVsThreadedWaitDialogFactory));
+            var dialogFactory = (IVsThreadedWaitDialogFactory)this.serviceProvider.GetService(typeof(SVsThreadedWaitDialogFactory));
             Contract.ThrowIfNull(dialogFactory);
 
             return new VisualStudioWaitContext(notificationService, dialogFactory, title, message, allowCancel);

@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Collections.Immutable
 Imports System.Threading
 Imports Microsoft.CodeAnalysis
@@ -38,7 +36,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Public ReadOnly InsertionText As String
             Public ReadOnly GenericInsertionText As String
 
-            Public Sub New(provider As ImplementsInheritsStatementCompletionProvider,
+            Sub New(provider As ImplementsInheritsStatementCompletionProvider,
                     displayText As String,
                     span As TextSpan,
                     description As Func(Of CancellationToken, Task(Of ImmutableArray(Of SymbolDisplayPart))),
@@ -56,7 +54,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
         Protected Overrides Async Function GetItemsWorkerAsync(document As Document, position As Integer, triggerInfo As CompletionTriggerInfo, cancellationToken As CancellationToken) As Task(Of IEnumerable(Of CompletionItem))
             Dim syntaxTree = Await document.GetVisualBasicSyntaxTreeAsync(cancellationToken).ConfigureAwait(False)
             Dim token = syntaxTree.FindTokenOnLeftOfPosition(position, cancellationToken).GetPreviousTokenIfTouchingWord(position)
-            If token.Kind = SyntaxKind.None Then
+            If token.VBKind = SyntaxKind.None Then
                 Return Nothing
             End If
 
@@ -117,7 +115,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
             Dim symbols As ImmutableArray(Of ISymbol) = Nothing
 
-            If token.Kind = SyntaxKind.DotToken Then
+            If token.VBKind = SyntaxKind.DotToken Then
                 Dim left = DirectCast(token.Parent, QualifiedNameSyntax).Left
                 Dim leftSymbol = semanticModel.GetSymbolInfo(left, cancellationToken)
                 If leftSymbol.Symbol IsNot Nothing Then
@@ -136,13 +134,13 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Dim span = CompletionUtilities.GetTextChangeSpan(text, position)
             Dim containingType = semanticModel.GetEnclosingNamedType(position, cancellationToken)
 
-            Dim context = VisualBasicSyntaxContext.CreateContext(workspace, semanticModel, tokenPosition, cancellationToken)
+            Dim context = VisualBasicSyntaxContext.CreateContext(workspace, semanticModel, token.SyntaxTree, tokenPosition, cancellationToken)
 
             If containingType Is Nothing Then
                 ' Try to figure out the containing type by finding the actual declaration.
                 Dim typeBlock = token.GetAncestor(Of TypeBlockSyntax)()
                 If typeBlock IsNot Nothing Then
-                    Dim typeStatement = typeBlock.BlockStatement
+                    Dim typeStatement = typeBlock.Begin
                     If typeStatement IsNot Nothing Then
                         containingType = semanticModel.GetDeclaredSymbol(typeStatement, cancellationToken)
                     End If

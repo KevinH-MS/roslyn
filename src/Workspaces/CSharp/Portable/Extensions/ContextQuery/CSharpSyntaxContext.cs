@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -52,6 +52,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
         private CSharpSyntaxContext(
             Workspace workspace,
             SemanticModel semanticModel,
+            SyntaxTree syntaxTree,
             int position,
             SyntaxToken leftToken,
             SyntaxToken targetToken,
@@ -97,7 +98,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
             bool isCrefContext,
             bool isCatchFilterContext,
             bool isDestructorTypeContext)
-            : base(workspace, semanticModel, position, leftToken, targetToken,
+            : base(workspace, semanticModel, syntaxTree, position, leftToken, targetToken,
                    isTypeContext, isNamespaceContext,
                    isPreProcessorDirectiveContext,
                    isRightOfDotOrArrowOrColonColon, isStatementContext, isAnyExpressionContext,
@@ -137,10 +138,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
             this.IsDestructorTypeContext = isDestructorTypeContext;
         }
 
-        public static CSharpSyntaxContext CreateContext(Workspace workspace, SemanticModel semanticModel, int position, CancellationToken cancellationToken)
+        public static CSharpSyntaxContext CreateContext(Workspace workspace, SemanticModel semanticModel, SyntaxTree syntaxTree, int position, CancellationToken cancellationToken)
         {
-            var syntaxTree = semanticModel.SyntaxTree;
-
             var isInNonUserCode = syntaxTree.IsInNonUserCode(position, cancellationToken);
 
             var preProcessorTokenOnLeftOfPosition = syntaxTree.FindTokenOnLeftOfPosition(position, cancellationToken, includeDirectives: true);
@@ -190,6 +189,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
             return new CSharpSyntaxContext(
                 workspace,
                 semanticModel,
+                syntaxTree,
                 position,
                 leftToken,
                 targetToken,
@@ -239,7 +239,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
 
         public static CSharpSyntaxContext CreateContext_Test(SemanticModel semanticModel, int position, CancellationToken cancellationToken)
         {
-            return CreateContext(/*workspace*/null, semanticModel, position, cancellationToken);
+            return CreateContext(/*workspace*/null, semanticModel, semanticModel.SyntaxTree, position, cancellationToken);
         }
 
         public bool IsTypeAttributeContext(CancellationToken cancellationToken)
@@ -252,8 +252,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
             // Note that we pass the token.SpanStart to IsTypeDeclarationContext below. This is a bit subtle,
             // but we want to be sure that the attribute itself (i.e. the open square bracket, '[') is in a
             // type declaration context.
-            if (token.Kind() == SyntaxKind.OpenBracketToken &&
-                token.Parent.Kind() == SyntaxKind.AttributeList &&
+            if (token.CSharpKind() == SyntaxKind.OpenBracketToken &&
+                token.Parent.CSharpKind() == SyntaxKind.AttributeList &&
                 this.SyntaxTree.IsTypeDeclarationContext(
                     token.SpanStart, contextOpt: null, validModifiers: null, validTypeDeclarations: SyntaxKindSet.ClassStructTypeDeclarations, canBePartial: false, cancellationToken: cancellationToken))
             {
@@ -278,8 +278,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
             //   class C { [ |
             var token = this.TargetToken;
 
-            if (token.Kind() == SyntaxKind.OpenBracketToken &&
-                token.Parent.Kind() == SyntaxKind.AttributeList &&
+            if (token.CSharpKind() == SyntaxKind.OpenBracketToken &&
+                token.Parent.CSharpKind() == SyntaxKind.AttributeList &&
                 this.SyntaxTree.IsMemberDeclarationContext(
                     token.SpanStart, contextOpt: null, validModifiers: null, validTypeDeclarations: validTypeDeclarations, canBePartial: false, cancellationToken: cancellationToken))
             {

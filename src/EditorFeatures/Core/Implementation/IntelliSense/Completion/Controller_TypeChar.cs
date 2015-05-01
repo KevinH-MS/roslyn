@@ -1,5 +1,3 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,7 +83,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
                         this.CommitOnTypeChar(args.TypedChar);
                         return;
                     }
-                    else if (_autoBraceCompletionChars.Contains(args.TypedChar) &&
+                    else if (this.autoBraceCompletionChars.Contains(args.TypedChar) &&
                              this.SubjectBuffer.GetOption(InternalFeatureOnOffOptions.AutomaticPairCompletion) &&
                              this.IsCommitCharacter(args.TypedChar))
                     {
@@ -117,7 +115,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
             var isTextuallyTriggered = IsTextualTriggerCharacter(completionService, args.TypedChar, options);
             var isPotentionalFilterCharacter = IsPotentionalFilterCharacter(args);
             var triggerInfo = CompletionTriggerInfo.CreateTypeCharTriggerInfo(args.TypedChar)
-                .WithIsDebugger(_isDebugger).WithIsImmediateWindow(_isImmediateWindow);
+                .WithIsDebugger(isDebugger).WithIsImmediateWindow(isImmediateWindow);
 
             if (sessionOpt == null)
             {
@@ -155,7 +153,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
                         // we have computed one, or it can trigger a new list.  Ask the computation
                         // to compute again. If nothing has been computed, then it will try to
                         // compute again, otherwise it will just ignore this request.
-                        sessionOpt.ComputeModel(completionService, triggerInfo, GetCompletionProviders(), _isDebugger);
+                        sessionOpt.ComputeModel(completionService, triggerInfo, GetCompletionProviders(), isDebugger);
                     }
 
                     // Now filter whatever result we have.
@@ -251,7 +249,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
             if (Workspace.TryGetWorkspace(this.SubjectBuffer.AsTextContainer(), out workspace))
             {
                 var extensionProviders = workspace.Services.SelectMatchingExtensionValues(
-                    _allCompletionRules, this.SubjectBuffer);
+                    this.allCompletionRules, this.SubjectBuffer);
 
                 return defaultRules.Concat(extensionProviders);
             }
@@ -282,7 +280,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
             if (Workspace.TryGetWorkspace(this.SubjectBuffer.AsTextContainer(), out workspace))
             {
                 var extensionProviders = workspace.Services.SelectMatchingExtensionValues(
-                    _allCompletionProviders, this.SubjectBuffer);
+                    this.allCompletionProviders, this.SubjectBuffer);
 
                 return defaultProviders.Concat(extensionProviders.Where(p => !(p is ISnippetCompletionProvider)));
             }
@@ -296,7 +294,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
             if (Workspace.TryGetWorkspace(this.SubjectBuffer.AsTextContainer(), out workspace))
             {
                 var extensionProviders = workspace.Services.SelectMatchingExtensionValues(
-                    _allCompletionProviders, this.SubjectBuffer);
+                    this.allCompletionProviders, this.SubjectBuffer);
 
                 return extensionProviders.OfType<ISnippetCompletionProvider>();
             }

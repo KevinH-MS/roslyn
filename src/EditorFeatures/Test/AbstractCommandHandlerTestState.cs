@@ -1,5 +1,3 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,10 +17,10 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests
     internal abstract class AbstractCommandHandlerTestState : IDisposable
     {
         public readonly TestWorkspace Workspace;
-        public readonly IEditorOperations EditorOperations;
+        public IEditorOperations EditorOperations;
         public readonly ITextUndoHistoryRegistry UndoHistoryRegistry;
-        private readonly ITextView _textView;
-        private readonly ITextBuffer _subjectBuffer;
+        private readonly ITextView textView;
+        private readonly ITextBuffer subjectBuffer;
 
         public AbstractCommandHandlerTestState(
             XElement workspaceElement,
@@ -55,8 +53,8 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests
                 workspaceKind: workspaceKind);
 
             var cursorDocument = this.Workspace.Documents.First(d => d.CursorPosition.HasValue);
-            _textView = cursorDocument.GetTextView();
-            _subjectBuffer = cursorDocument.GetTextBuffer();
+            this.textView = cursorDocument.GetTextView();
+            this.subjectBuffer = cursorDocument.GetTextBuffer();
 
             IList<Text.TextSpan> selectionSpanList;
 
@@ -68,30 +66,30 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests
                 Assert.True(cursorPosition == span.Start || cursorPosition == span.Start + span.Length,
                     "cursorPosition wasn't at an endpoint of the 'Selection' annotated span");
 
-                _textView.Selection.Select(
-                    new SnapshotSpan(_subjectBuffer.CurrentSnapshot, new Span(span.Start, span.Length)),
+                this.textView.Selection.Select(
+                    new SnapshotSpan(this.subjectBuffer.CurrentSnapshot, new Span(span.Start, span.Length)),
                     isReversed: cursorPosition == span.Start);
 
                 if (selectionSpanList.Count > 1)
                 {
-                    _textView.Selection.Mode = TextSelectionMode.Box;
+                    this.textView.Selection.Mode = TextSelectionMode.Box;
                     foreach (var additionalSpan in selectionSpanList.Skip(1))
                     {
-                        _textView.Selection.Select(
-                            new SnapshotSpan(_subjectBuffer.CurrentSnapshot, new Span(additionalSpan.Start, additionalSpan.Length)),
+                        this.textView.Selection.Select(
+                            new SnapshotSpan(this.subjectBuffer.CurrentSnapshot, new Span(additionalSpan.Start, additionalSpan.Length)),
                             isReversed: false);
                     }
                 }
             }
             else
             {
-                _textView.Caret.MoveTo(
+                this.textView.Caret.MoveTo(
                     new SnapshotPoint(
-                        _textView.TextBuffer.CurrentSnapshot,
+                        this.textView.TextBuffer.CurrentSnapshot,
                         cursorDocument.CursorPosition.Value));
             }
 
-            this.EditorOperations = GetService<IEditorOperationsFactoryService>().GetEditorOperations(_textView);
+            this.EditorOperations = GetService<IEditorOperationsFactoryService>().GetEditorOperations(textView);
             this.UndoHistoryRegistry = GetService<ITextUndoHistoryRegistry>();
         }
 
@@ -121,12 +119,12 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests
 
         public virtual ITextView TextView
         {
-            get { return _textView; }
+            get { return this.textView; }
         }
 
         public virtual ITextBuffer SubjectBuffer
         {
-            get { return _subjectBuffer; }
+            get { return this.subjectBuffer; }
         }
 
         #region MEF
@@ -338,11 +336,6 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests
         public void SendSave(Action<SaveCommandArgs, Action> commandHandler, Action nextHandler)
         {
             commandHandler(new SaveCommandArgs(TextView, SubjectBuffer), nextHandler);
-        }
-
-        public void SendSelectAll(Action<SelectAllCommandArgs, Action> commandHandler, Action nextHandler)
-        {
-            commandHandler(new SelectAllCommandArgs(TextView, SubjectBuffer), nextHandler);
         }
 
         #endregion

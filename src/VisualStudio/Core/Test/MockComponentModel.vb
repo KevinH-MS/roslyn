@@ -1,6 +1,4 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-Imports System.ComponentModel.Composition
+﻿Imports System.ComponentModel.Composition
 Imports System.ComponentModel.Composition.Primitives
 Imports Microsoft.VisualStudio.ComponentModelHost
 Imports Microsoft.VisualStudio.Composition
@@ -18,7 +16,7 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests
 
         Public ReadOnly Property DefaultCatalog As ComposablePartCatalog Implements IComponentModel.DefaultCatalog
             Get
-                Throw New NotImplementedException
+                Throw New NotImplementedException()
             End Get
         End Property
 

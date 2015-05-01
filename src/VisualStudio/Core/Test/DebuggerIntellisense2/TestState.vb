@@ -6,26 +6,27 @@ Imports Microsoft.CodeAnalysis.Completion.Rules
 Imports Microsoft.CodeAnalysis.Editor
 Imports Microsoft.CodeAnalysis.Editor.CommandHandlers
 Imports Microsoft.CodeAnalysis.Editor.Commands
-Imports Microsoft.CodeAnalysis.Editor.Implementation.Intellisense.Completion
 Imports Microsoft.CodeAnalysis.Editor.UnitTests
 Imports Microsoft.CodeAnalysis.Editor.UnitTests.IntelliSense
-Imports Microsoft.CodeAnalysis.Host.Mef
 Imports Microsoft.CodeAnalysis.Shared.Extensions
 Imports Microsoft.CodeAnalysis.Shared.TestHooks
 Imports Microsoft.CodeAnalysis.Text.Shared.Extensions
-Imports Microsoft.VisualStudio.LanguageServices.CSharp.LanguageService
-Imports Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense
 Imports Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense2
 Imports Microsoft.VisualStudio.LanguageServices.Implementation.Extensions
-Imports Microsoft.VisualStudio.LanguageServices.VisualBasic
 Imports Microsoft.VisualStudio.Text
 Imports Microsoft.VisualStudio.Text.BraceCompletion
 Imports Microsoft.VisualStudio.Text.BraceCompletion.Implementation
 Imports Microsoft.VisualStudio.Text.Editor
 Imports Microsoft.VisualStudio.Text.Operations
 Imports Microsoft.VisualStudio.TextManager
+Imports Microsoft.VisualStudio.LanguageServices.CSharp.DebuggerIntellisense2
+Imports Microsoft.VisualStudio.LanguageServices.Implementation
+Imports Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion
+Imports Microsoft.CodeAnalysis.Host.Mef
+Imports Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense
+Imports Microsoft.VisualStudio.LanguageServices.VisualBasic
 
-Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.DebuggerIntelliSense
+Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.DebuggerIntelliSense2
 
     Friend Class TestState
         Inherits AbstractCommandHandlerTestState
@@ -36,7 +37,7 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.DebuggerIntelliSense
         Friend ReadOnly CompletionCommandHandler As CompletionCommandHandler
         Friend ReadOnly IntelliSenseCommandHandler As IntelliSenseCommandHandler
 
-        Private context As AbstractDebuggerIntelliSenseContext
+        Public context As DebuggerWorkspace
 
         Friend Property CurrentSignatureHelpPresenterSession As TestSignatureHelpPresenterSession Implements IIntelliSenseTestState.CurrentSignatureHelpPresenterSession
         Friend Property CurrentCompletionPresenterSession As TestCompletionPresenterSession Implements IIntelliSenseTestState.CurrentCompletionPresenterSession
@@ -46,13 +47,14 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.DebuggerIntelliSense
                         extraSignatureHelpProviders As IEnumerable(Of Lazy(Of ISignatureHelpProvider, OrderableLanguageMetadata)),
                         isImmediateWindow As Boolean)
 
+            ' TODO(kirillo): make this composition DisableSilentRejection
             MyBase.New(
                 workspaceElement,
                 exportProvider:=MinimalTestExportProvider.CreateExportProvider(VisualStudioTestExportProvider.PartCatalog.WithParts(
                             GetType(CompletionWaiter),
                             GetType(SignatureHelpWaiter),
                             GetType(DebuggerSemanticModelWorkspaceService),
-                            GetType(ClassDesignerCompletionProvider))),
+                            GetType(CSharpDebuggerSemanticModelService))),
                 workspaceKind:=WorkspaceKind.Debugger)
 
             Dim languageServices = Me.Workspace.CurrentSolution.Projects.First().LanguageServices
@@ -92,34 +94,29 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.DebuggerIntelliSense
             Dim componentModel = New MockComponentModel(Workspace.ExportProvider)
 
             If language = LanguageNames.CSharp Then
-                context = New CSharpDebuggerIntelliSenseContext(
-                    Workspace.Projects.First().Documents.First().GetTextView(),
-                    Workspace.Projects.First().Documents.Last().GetTextBuffer(),
-                    span,
-                    componentModel,
-                    isImmediateWindow)
+                context = CSharpDebuggerWorkspace.Create(Workspace.CurrentSolution.GetDocument(spanDocument.Id), Workspace.Services.HostServices, GetService(Of ITextBufferFactoryService), GetService(Of ITextEditorFactoryService))
             Else
-                ' VB
-                context = New VisualBasicDebuggerIntelliSenseContext(
-                    Workspace.Projects.First().Documents.First().GetTextView(),
-                    Workspace.Projects.First().Documents.Last().GetTextBuffer(),
-                    span,
-                    componentModel,
-                    isImmediateWindow)
+                context = VisualBasicDebuggerWorkspace.Create(Workspace.CurrentSolution.GetDocument(spanDocument.Id), Workspace.Services.HostServices, GetService(Of ITextBufferFactoryService), GetService(Of ITextEditorFactoryService))
             End If
 
-            context.TryInitialize()
+            context.Context.GetLanguageService(Of IDebuggerSemanticModelLanguageService).UpdateContext(Workspace.CurrentSolution.GetDocument(spanDocument.Id), statementSpan)
+
+            If isImmediateWindow Then
+                context.TextView.Properties.AddProperty(GetType(IDebuggerTextView), Nothing)
+            End If
+
+            EditorOperations = GetService(Of IEditorOperationsFactoryService).GetEditorOperations(context.TextView)
         End Sub
 
         Public Overrides ReadOnly Property TextView As ITextView
             Get
-                Return context.DebuggerTextView
+                Return context.TextView
             End Get
         End Property
 
         Public Overrides ReadOnly Property SubjectBuffer As ITextBuffer
             Get
-                Return context.Buffer
+                Return context.TextView.TextBuffer
             End Get
         End Property
 
@@ -190,7 +187,6 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.DebuggerIntelliSense
         Public Overloads Sub SendReturn()
             Dim handler = DirectCast(CompletionCommandHandler, ICommandHandler(Of ReturnKeyCommandArgs))
             MyBase.SendReturn(Sub(a, n) handler.ExecuteCommand(a, n), Sub() EditorOperations.InsertNewLine())
-            Me.context.RebuildSpans()
         End Sub
 
         Public Overloads Sub SendPageUp()

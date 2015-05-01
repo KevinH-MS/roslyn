@@ -1,6 +1,5 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -8,7 +7,9 @@ using Microsoft.CodeAnalysis.CSharp.Extensions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editor;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.LanguageServices.CSharp.DebuggerIntellisense2;
 using Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense;
+using Microsoft.VisualStudio.LanguageServices.Implementation.DebuggerIntelliSense2;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Projection;
@@ -104,6 +105,30 @@ namespace Microsoft.VisualStudio.LanguageServices.CSharp.LanguageService
         protected override string StatementTerminator
         {
             get { return ";"; }
+        }
+
+        protected bool IsClassDesigner(int contextPoint, Document document)
+        {
+            var tree = document.GetCSharpSyntaxTreeAsync(CancellationToken.None).WaitAndGetResult(CancellationToken.None);
+            var token = tree.FindTokenOnLeftOfPosition(contextPoint, CancellationToken.None);
+
+            // Special case to handle class designer because it asks for debugger IntelliSense using
+            // spans between members.
+            return contextPoint > token.Span.End &&
+                token.IsKindOrHasMatchingText(SyntaxKind.CloseBraceToken) &&
+                token.Parent.IsKind(SyntaxKind.Block) &&
+                token.Parent.Parent is MemberDeclarationSyntax;
+        }
+
+        internal override IProjectionBuffer AssembleProjection(ITrackingSpan debuggerMappedSpan, IContentType contentType, IProjectionBufferFactoryService projectionFactory)
+        {
+            var parts = new List<object>() { "class C \r\n{\r\nvoid foo()\r\n{ var __o = ", debuggerMappedSpan, "\r\n}}" };
+            return projectionFactory.CreateProjectionBuffer(projectionEditResolver: null, sourceSpans: parts, options: ProjectionBufferOptions.None, contentType: contentType);
+        }
+
+        internal override DebuggerWorkspace CreateDebuggerWorkspace(DebuggerTextView debuggerTextView, ITextBuffer textBuffer, Document contextDocument)
+        {
+            return CSharpDebuggerWorkspace.Create(contextDocument, debuggerTextView, textBuffer);
         }
     }
 }

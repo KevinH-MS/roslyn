@@ -1,4 +1,4 @@
-﻿' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+' Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 Imports System.Collections.Immutable
 Imports System.Composition
@@ -19,13 +19,14 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Recommendations
         Protected Overrides Function GetRecommendedSymbolsAtPositionWorker(
             workspace As Workspace,
             semanticModel As SemanticModel,
+            syntaxTree As SyntaxTree,
             position As Integer,
             options As OptionSet,
             cancellationToken As CancellationToken
         ) As Tuple(Of IEnumerable(Of ISymbol), AbstractSyntaxContext)
 
             Dim visualBasicSemanticModel = DirectCast(semanticModel, SemanticModel)
-            Dim context = VisualBasicSyntaxContext.CreateContext(workspace, visualBasicSemanticModel, position, cancellationToken)
+            Dim context = VisualBasicSyntaxContext.CreateContext(workspace, visualBasicSemanticModel, syntaxTree, position, cancellationToken)
 
             Dim filterOutOfScopeLocals = options.GetOption(RecommendationOptions.FilterOutOfScopeLocals, semanticModel.Language)
             Dim symbols = GetSymbolsWorker(context, filterOutOfScopeLocals, cancellationToken)
@@ -49,9 +50,9 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Recommendations
 
             Dim node = context.TargetToken.Parent
             If context.IsRightOfNameSeparator Then
-                If node.Kind = SyntaxKind.SimpleMemberAccessExpression Then
+                If node.VBKind = SyntaxKind.SimpleMemberAccessExpression Then
                     Return GetSymbolsForMemberAccessExpression(context, DirectCast(node, MemberAccessExpressionSyntax), cancellationToken)
-                ElseIf node.Kind = SyntaxKind.QualifiedName Then
+                ElseIf node.VBKind = SyntaxKind.QualifiedName Then
                     Return GetSymbolsForQualifiedNameSyntax(context, DirectCast(node, QualifiedNameSyntax), cancellationToken)
                 End If
             ElseIf context.SyntaxTree.IsQueryIntoClauseContext(context.Position, context.TargetToken, cancellationToken) Then
@@ -276,12 +277,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Recommendations
                 If type?.ConstructedFrom.SpecialType = SpecialType.System_Nullable_T Then
                     container = type.GetTypeArguments().First()
                 End If
-            End If
-
-            ' No completion on types/namespace after conditional access
-            If leftExpression.Parent.IsKind(SyntaxKind.ConditionalAccessExpression) AndAlso
-                (couldBeMergedNamespace OrElse leftHandBinding.GetBestOrAllSymbols().FirstOrDefault().MatchesKind(SymbolKind.NamedType, SymbolKind.Namespace, SymbolKind.Alias)) Then
-                Return SpecializedCollections.EmptyCollection(Of ISymbol)()
             End If
 
             Dim position = node.SpanStart

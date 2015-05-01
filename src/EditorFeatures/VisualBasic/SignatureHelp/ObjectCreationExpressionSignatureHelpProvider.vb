@@ -1,5 +1,4 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
+Imports System.Runtime.CompilerServices
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports Microsoft.CodeAnalysis.DocumentationCommentFormatting
@@ -22,9 +21,9 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.SignatureHelp
             Return ch = ")"c
         End Function
 
-        Public Overrides Function GetCurrentArgumentState(root As SyntaxNode, position As Integer, syntaxFacts As ISyntaxFactsService, currentSpan As TextSpan, cancellationToken As CancellationToken) As SignatureHelpState
+        Public Overrides Function GetCurrentArgumentState(root As SyntaxNode, position As Integer, syntaxFacts As ISyntaxFactsService, currentSpan As TextSpan) As SignatureHelpState
             Dim expression As ObjectCreationExpressionSyntax = Nothing
-            If TryGetObjectCreationExpression(root, position, syntaxFacts, SignatureHelpTriggerReason.InvokeSignatureHelpCommand, cancellationToken, expression) AndAlso
+            If TryGetObjectCreationExpression(root, position, syntaxFacts, SignatureHelpTriggerReason.InvokeSignatureHelpCommand, expression) AndAlso
                 currentSpan.Start = SignatureHelpUtilities.GetSignatureHelpSpan(expression.ArgumentList).Start Then
 
                 Return SignatureHelpUtilities.GetSignatureHelpState(expression.ArgumentList, position)
@@ -33,8 +32,8 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.SignatureHelp
             Return Nothing
         End Function
 
-        Private Function TryGetObjectCreationExpression(root As SyntaxNode, position As Integer, syntaxFacts As ISyntaxFactsService, triggerReason As SignatureHelpTriggerReason, cancellationToken As CancellationToken, ByRef expression As ObjectCreationExpressionSyntax) As Boolean
-            If Not CommonSignatureHelpUtilities.TryGetSyntax(root, position, syntaxFacts, triggerReason, AddressOf IsTriggerToken, AddressOf IsArgumentListToken, cancellationToken, expression) Then
+        Private Function TryGetObjectCreationExpression(root As SyntaxNode, position As Integer, syntaxFacts As ISyntaxFactsService, triggerReason As SignatureHelpTriggerReason, ByRef expression As ObjectCreationExpressionSyntax) As Boolean
+            If Not CommonSignatureHelpUtilities.TryGetSyntax(root, position, syntaxFacts, triggerReason, AddressOf IsTriggerToken, AddressOf IsArgumentListToken, expression) Then
                 Return False
             End If
 
@@ -42,7 +41,7 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.SignatureHelp
         End Function
 
         Private Shared Function IsTriggerToken(token As SyntaxToken) As Boolean
-            Return (token.Kind = SyntaxKind.OpenParenToken OrElse token.Kind = SyntaxKind.CommaToken) AndAlso
+            Return (token.VBKind = SyntaxKind.OpenParenToken OrElse token.VBKind = SyntaxKind.CommaToken) AndAlso
                     TypeOf token.Parent Is ArgumentListSyntax AndAlso
                     TypeOf token.Parent.Parent Is ObjectCreationExpressionSyntax
         End Function
@@ -57,11 +56,11 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.SignatureHelp
             Dim root = Await document.GetVisualBasicSyntaxRootAsync(cancellationToken).ConfigureAwait(False)
 
             Dim objectCreationExpression As ObjectCreationExpressionSyntax = Nothing
-            If Not TryGetObjectCreationExpression(root, position, document.GetLanguageService(Of ISyntaxFactsService), triggerInfo.TriggerReason, cancellationToken, objectCreationExpression) Then
+            If Not TryGetObjectCreationExpression(root, position, document.GetLanguageService(Of ISyntaxFactsService), triggerInfo.TriggerReason, objectCreationExpression) Then
                 Return Nothing
             End If
 
-            Dim semanticModel = Await document.GetVisualBasicSemanticModelAsync(cancellationToken).ConfigureAwait(False)
+            Dim semanticModel = Await document.GetVisualBasicSemanticModelForSpanAsync(New TextSpan(position, 0), cancellationToken).ConfigureAwait(False)
             Dim type = TryCast(semanticModel.GetTypeInfo(objectCreationExpression, cancellationToken).Type, INamedTypeSymbol)
             If type Is Nothing Then
                 Return Nothing
@@ -82,7 +81,7 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.SignatureHelp
                 If(type.TypeKind = TypeKind.Delegate,
                       GetDelegateTypeConstructors(objectCreationExpression, semanticModel, symbolDisplayService, anonymousTypeDisplayService, documentationCommentFormattingService, type, within, cancellationToken),
                       GetNormalTypeConstructors(document, objectCreationExpression, semanticModel, symbolDisplayService, anonymousTypeDisplayService, type, within, cancellationToken)),
-                textSpan, GetCurrentArgumentState(root, position, syntaxFacts, textSpan, cancellationToken))
+                textSpan, GetCurrentArgumentState(root, position, syntaxFacts, textSpan))
         End Function
     End Class
 End Namespace

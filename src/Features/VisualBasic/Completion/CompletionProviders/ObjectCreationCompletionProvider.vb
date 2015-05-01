@@ -1,5 +1,3 @@
-' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 Imports System.Threading
 Imports Microsoft.CodeAnalysis.Completion
 Imports Microsoft.CodeAnalysis.Completion.Providers
@@ -41,7 +39,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
                 newToken = newToken.GetPreviousTokenIfTouchingWord(position)
 
                 ' Only after 'new'.
-                If newToken.Kind = SyntaxKind.NewKeyword Then
+                If newToken.VBKind = SyntaxKind.NewKeyword Then
                     ' Only if the 'new' belongs to an object creation expression.
                     If tree.IsObjectCreationTypeContext(position, cancellationToken) Then
                         newExpression = TryCast(newToken.Parent, ExpressionSyntax)
@@ -54,7 +52,8 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
         Protected Overrides Async Function CreateContext(document As Document, position As Integer, cancellationToken As CancellationToken) As Task(Of AbstractSyntaxContext)
             Dim semanticModel = Await document.GetSemanticModelForSpanAsync(New TextSpan(position, 0), cancellationToken).ConfigureAwait(False)
-            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken)
+            Dim syntaxTree = Await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(False)
+            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken)
         End Function
     End Class
 End Namespace

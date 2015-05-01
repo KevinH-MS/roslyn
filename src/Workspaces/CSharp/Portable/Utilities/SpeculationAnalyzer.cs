@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -65,14 +65,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
 
         public static bool CanSpeculateOnNode(SyntaxNode node)
         {
-            return (node is StatementSyntax && node.Kind() != SyntaxKind.Block) ||
+            return (node is StatementSyntax && node.CSharpKind() != SyntaxKind.Block) ||
                 node is TypeSyntax ||
                 node is CrefSyntax ||
-                node.Kind() == SyntaxKind.Attribute ||
-                node.Kind() == SyntaxKind.ThisConstructorInitializer ||
-                node.Kind() == SyntaxKind.BaseConstructorInitializer ||
-                node.Kind() == SyntaxKind.EqualsValueClause ||
-                node.Kind() == SyntaxKind.ArrowExpressionClause;
+                node.CSharpKind() == SyntaxKind.Attribute ||
+                node.CSharpKind() == SyntaxKind.ThisConstructorInitializer ||
+                node.CSharpKind() == SyntaxKind.BaseConstructorInitializer ||
+                node.CSharpKind() == SyntaxKind.EqualsValueClause ||
+                node.CSharpKind() == SyntaxKind.ArrowExpressionClause;
         }
 
         protected override void ValidateSpeculativeSemanticModel(SemanticModel speculativeSemanticModel, SyntaxNode nodeToSpeculate)
@@ -133,7 +133,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
                 return speculativeModel;
             }
 
-            switch (nodeToSpeculate.Kind())
+            switch (nodeToSpeculate.CSharpKind())
             {
                 case SyntaxKind.Attribute:
                     semanticModel.TryGetSpeculativeSemanticModel(position, (AttributeSyntax)nodeToSpeculate, out speculativeModel);
@@ -172,7 +172,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
             SyntaxNode originalLambdaBody, replacedLambdaBody;
             List<string> paramNames;
 
-            switch (originalLambda.Kind())
+            switch (originalLambda.CSharpKind())
             {
                 case SyntaxKind.ParenthesizedLambdaExpression:
                     {
@@ -225,7 +225,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
                     }
 
                 default:
-                    throw ExceptionUtilities.UnexpectedValue(originalLambda.Kind());
+                    throw ExceptionUtilities.UnexpectedValue(originalLambda.CSharpKind());
             }
 
             var originalIdentifierNodes = originalLambdaBody.DescendantNodes().OfType<IdentifierNameSyntax>().Where(node => paramNames.Contains(node.Identifier.ValueText));
@@ -279,10 +279,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
                 // If replacing the node will result in a broken binary expression, we won't remove it.
                 return ReplacementBreaksBinaryExpression((BinaryExpressionSyntax)currentOriginalNode, (BinaryExpressionSyntax)currentReplacedNode);
             }
-            else if (currentOriginalNode.Kind() == SyntaxKind.ConditionalAccessExpression)
-            {
-                return ReplacementBreaksConditionalAccessExpression((ConditionalAccessExpressionSyntax)currentOriginalNode, (ConditionalAccessExpressionSyntax)currentReplacedNode);
-            }
             else if (currentOriginalNode is AssignmentExpressionSyntax)
             {
                 // If replacing the node will result in a broken assignment expression, we won't remove it.
@@ -296,7 +292,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
             {
                 return ReplacementBreaksQueryClause((QueryClauseSyntax)currentOriginalNode, (QueryClauseSyntax)currentReplacedNode);
             }
-            else if (currentOriginalNode.Kind() == SyntaxKind.VariableDeclarator)
+            else if (currentOriginalNode.CSharpKind() == SyntaxKind.VariableDeclarator)
             {
                 // Heuristic: If replacing the node will result in changing the type of a local variable
                 // that is type-inferred, we won't remove it. It's possible to do this analysis, but it's
@@ -322,7 +318,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
 
                 return false;
             }
-            else if (currentOriginalNode.Kind() == SyntaxKind.ConditionalExpression)
+            else if (currentOriginalNode.CSharpKind() == SyntaxKind.ConditionalExpression)
             {
                 var originalExpression = (ConditionalExpressionSyntax)currentOriginalNode;
                 var newExpression = (ConditionalExpressionSyntax)currentReplacedNode;
@@ -363,7 +359,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
                     }
                 }
             }
-            else if (currentOriginalNode.Kind() == SyntaxKind.SwitchStatement)
+            else if (currentOriginalNode.CSharpKind() == SyntaxKind.SwitchStatement)
             {
                 var originalSwitchStatement = (SwitchStatementSyntax)currentOriginalNode;
                 var newSwitchStatement = (SwitchStatementSyntax)currentReplacedNode;
@@ -391,7 +387,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
                     }
                 }
             }
-            else if (currentOriginalNode.Kind() == SyntaxKind.IfStatement)
+            else if (currentOriginalNode.CSharpKind() == SyntaxKind.IfStatement)
             {
                 var originalIfStatement = (IfStatementSyntax)currentOriginalNode;
                 var newIfStatement = (IfStatementSyntax)currentReplacedNode;
@@ -411,7 +407,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
                 var newCtorInitializer = (ConstructorInitializerSyntax)currentReplacedNode;
                 return ReplacementBreaksConstructorInitializer(originalCtorInitializer, newCtorInitializer);
             }
-            else if (currentOriginalNode.Kind() == SyntaxKind.CollectionInitializerExpression)
+            else if (currentOriginalNode.CSharpKind() == SyntaxKind.CollectionInitializerExpression)
             {
                 return previousOriginalNode != null &&
                     ReplacementBreaksCollectionInitializerAddMethod((ExpressionSyntax)previousOriginalNode, (ExpressionSyntax)previousReplacedNode);
@@ -466,7 +462,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
         {
             expression = expression.WalkDownParentheses();
 
-            switch (expression.Kind())
+            switch (expression.CSharpKind())
             {
                 case SyntaxKind.InvocationExpression:
                     return ((InvocationExpressionSyntax)expression).ArgumentList;
@@ -484,7 +480,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
         {
             expression = expression.WalkDownParentheses();
 
-            switch (expression.Kind())
+            switch (expression.CSharpKind())
             {
                 case SyntaxKind.SimpleMemberAccessExpression:
                     return ((MemberAccessExpressionSyntax)expression).Expression;
@@ -565,14 +561,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
                 !ImplicitConversionsAreCompatible(binaryExpression, newBinaryExpression);
         }
 
-        private bool ReplacementBreaksConditionalAccessExpression(ConditionalAccessExpressionSyntax conditionalAccessExpression, ConditionalAccessExpressionSyntax newConditionalAccessExpression)
-        {
-            return !SymbolsAreCompatible(conditionalAccessExpression, newConditionalAccessExpression) ||
-                !TypesAreCompatible(conditionalAccessExpression, newConditionalAccessExpression) || 
-                !SymbolsAreCompatible(conditionalAccessExpression.WhenNotNull, newConditionalAccessExpression.WhenNotNull) ||
-                !TypesAreCompatible(conditionalAccessExpression.WhenNotNull, newConditionalAccessExpression.WhenNotNull);
-        }
-
         private bool ReplacementBreaksIsOrAsExpression(BinaryExpressionSyntax originalIsOrAsExpression, BinaryExpressionSyntax newIsOrAsExpression)
         {
             // Special case: Lambda expressions and anonymous delegates cannot appear
@@ -601,8 +589,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
         private bool ReplacementBreaksAssignmentExpression(AssignmentExpressionSyntax assignmentExpression, AssignmentExpressionSyntax newAssignmentExpression)
         {
             if (assignmentExpression.IsCompoundAssignExpression() &&
-                assignmentExpression.Kind() != SyntaxKind.LeftShiftAssignmentExpression &&
-                assignmentExpression.Kind() != SyntaxKind.RightShiftAssignmentExpression &&
+                assignmentExpression.CSharpKind() != SyntaxKind.LeftShiftAssignmentExpression &&
+                assignmentExpression.CSharpKind() != SyntaxKind.RightShiftAssignmentExpression &&
                 ReplacementBreaksCompoundAssignExpression(assignmentExpression.Left, assignmentExpression.Right, newAssignmentExpression.Left, newAssignmentExpression.Right))
             {
                 return true;

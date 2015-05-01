@@ -1,5 +1,3 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -147,7 +145,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                 new VoidKeywordRecommender(),
                 new VolatileKeywordRecommender(),
                 new WarningKeywordRecommender(),
-                new WhenKeywordRecommender(),
                 new WhereKeywordRecommender(),
                 new WhileKeywordRecommender(),
                 new YieldKeywordRecommender(),
@@ -178,7 +175,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
         {
             var span = new TextSpan(position, 0);
             var semanticModel = await document.GetCSharpSemanticModelForSpanAsync(span, cancellationToken).ConfigureAwait(false);
-            return CSharpSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken);
+            var syntaxTree = await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(false); 
+            return CSharpSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, syntaxTree, position, cancellationToken);
         }
 
         protected override CompletionItem CreateItem(Workspace workspace, TextSpan span, RecommendedKeyword keyword)

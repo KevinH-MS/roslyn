@@ -1,5 +1,3 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
     {
         protected override Task<IEnumerable<ISymbol>> GetSymbolsWorker(AbstractSyntaxContext context, int position, OptionSet options, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Recommender.GetRecommendedSymbolsAtPosition(context.SemanticModel, position, context.Workspace, options, cancellationToken));
+            return Task.FromResult(Recommender.GetRecommendedSymbolsAtPosition(context.SemanticModel, context.SyntaxTree, position, context.Workspace, options, cancellationToken));
         }
 
         protected override TextSpan GetTextChangeSpan(SourceText text, int position)
@@ -73,12 +71,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
             // don't want to trigger after a number.  All other cases after dot are ok.
             var tree = await document.GetCSharpSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var token = tree.FindToken(characterPosition);
-            if (token.Kind() == SyntaxKind.DotToken)
+            if (token.CSharpKind() == SyntaxKind.DotToken)
             {
                 token = token.GetPreviousToken();
             }
 
-            return token.Kind() != SyntaxKind.NumericLiteralToken;
+            return token.CSharpKind() != SyntaxKind.NumericLiteralToken;
         }
 
         public override bool SendEnterThroughToEditor(CompletionItem completionItem, string textTypedSoFar)
@@ -91,7 +89,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
             var workspace = document.Project.Solution.Workspace;
             var span = new TextSpan(position, 0);
             var semanticModel = await document.GetCSharpSemanticModelForSpanAsync(span, cancellationToken).ConfigureAwait(false);
-            return CSharpSyntaxContext.CreateContext(workspace, semanticModel, position, cancellationToken);
+            var syntaxTree = await document.GetSyntaxTreeAsync(cancellationToken).ConfigureAwait(false);
+            return CSharpSyntaxContext.CreateContext(workspace, semanticModel, syntaxTree, position, cancellationToken);
         }
 
         protected override ValueTuple<string, string> GetDisplayAndInsertionText(ISymbol symbol, AbstractSyntaxContext context)
