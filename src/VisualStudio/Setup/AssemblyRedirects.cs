@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.CSharp",
@@ -16,7 +16,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.CSharp.EditorFeatures",
@@ -24,7 +24,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.CSharp.Features",
@@ -32,7 +32,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.CSharp.Workspaces",
@@ -40,7 +40,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis",
@@ -48,7 +48,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.EditorFeatures",
@@ -56,7 +56,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.EditorFeatures.Text",
@@ -64,7 +64,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.Features",
@@ -72,7 +72,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.VisualBasic",
@@ -80,7 +80,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.VisualBasic.EditorFeatures",
@@ -88,7 +88,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.VisualBasic.Features",
@@ -96,7 +96,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.VisualBasic.Workspaces",
@@ -104,7 +104,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.Workspaces.Desktop",
@@ -112,7 +112,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.CodeAnalysis.Workspaces",
@@ -120,7 +120,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.VisualStudio.LanguageServices",
@@ -128,7 +128,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.VisualStudio.LanguageServices.Implementation",
@@ -136,7 +136,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.VisualStudio.LanguageServices.VisualBasic",
@@ -144,7 +144,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.VisualStudio.LanguageServices.CSharp",
@@ -152,7 +152,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.VisualStudio.LanguageServices.SolutionExplorer",
@@ -160,7 +160,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "System.Reflection.Metadata",
@@ -168,7 +168,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = "1.0.99.0",
     NewVersion = "1.1.0.0",
     PublicKeyToken = "b03f5f7f11d50a3a",
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 #if !OFFICIAL_BUILD
 
@@ -178,7 +178,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 [assembly: ProvideBindingRedirection(
     AssemblyName = "Microsoft.VisualStudio.VsInteractiveWindow",
@@ -186,7 +186,7 @@ using Microsoft.VisualStudio.Shell;
     OldVersionUpperBound = Constants.OldVersionUpperBound,
     NewVersion = Constants.NewVersion,
     PublicKeyToken = Constants.PublicKeyToken,
-    GenerateCodeBase = false)]
+    GenerateCodeBase = true)]
 
 #endif
 
