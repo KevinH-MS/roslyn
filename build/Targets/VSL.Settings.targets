@@ -72,7 +72,7 @@
 
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
 
-    <SignAssembly Condition="'$(SignAssembly)' == ''">true</SignAssembly>
+    <SignAssembly Condition="'$(SignAssembly)' == ''">false</SignAssembly>
 
     <UseRoslynAnalyzers Condition="'$(UseRoslynAnalyzers)' == ''">true</UseRoslynAnalyzers>
 
