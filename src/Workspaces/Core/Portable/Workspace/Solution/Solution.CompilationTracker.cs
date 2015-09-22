@@ -273,7 +273,7 @@ namespace Microsoft.CodeAnalysis
                 }
 
                 inProgressProject = inProgressProject.AddProjectReferences(newProjectReferences);
-                if (!Enumerable.SequenceEqual(inProgressCompilation.References, metadataReferences))
+                if (!Enumerable.SequenceEqual(inProgressCompilation.References, metadataReferences, MetadataReferenceComparer.Instance))
                 {
                     inProgressCompilation = inProgressCompilation.WithReferences(metadataReferences);
                 }
@@ -609,7 +609,7 @@ namespace Microsoft.CodeAnalysis
                         }
                     }
 
-                    if (!Enumerable.SequenceEqual(compilation.References, newReferences))
+                    if (!Enumerable.SequenceEqual(compilation.References, newReferences, MetadataReferenceComparer.Instance))
                     {
                         compilation = compilation.WithReferences(newReferences);
                     }
