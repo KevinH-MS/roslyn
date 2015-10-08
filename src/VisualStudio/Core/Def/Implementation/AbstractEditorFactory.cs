@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.CodeAnalysis.Editor.Host;
@@ -63,7 +64,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation
             }
         }
 
-        protected abstract string ContentTypeName { get; }
+        protected abstract string GetContentTypeNameFromFileExtension(string fileExtension);
 
         public void SetEncoding(bool value)
         {
@@ -118,7 +119,9 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation
             // Do we need to create a text buffer?
             if (textBuffer == null)
             {
-                var contentType = _contentTypeRegistryService.GetContentType(ContentTypeName);
+                var fileExtension = Path.GetExtension(pszMkDocument).ToLowerInvariant();
+                var contentTypeName = GetContentTypeNameFromFileExtension(fileExtension);
+                var contentType = _contentTypeRegistryService.GetContentType(contentTypeName);
                 textBuffer = _editorAdaptersFactoryService.CreateVsTextBufferAdapter(_oleServiceProvider, contentType);
 
                 if (_encoding)
@@ -257,7 +260,9 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation
             // on disk.
 
             var contentTypeRegistryService = ComponentModel.GetService<IContentTypeRegistryService>();
-            var contentType = contentTypeRegistryService.GetContentType(ContentTypeName);
+            var fileExtension = Path.GetExtension(filePath).ToLowerInvariant();
+            var contentTypeName = GetContentTypeNameFromFileExtension(fileExtension);
+            var contentType = contentTypeRegistryService.GetContentType(contentTypeName);
 
             var textDocumentFactoryService = ComponentModel.GetService<ITextDocumentFactoryService>();
             using (var textDocument = textDocumentFactoryService.CreateAndLoadTextDocument(filePath, contentType))

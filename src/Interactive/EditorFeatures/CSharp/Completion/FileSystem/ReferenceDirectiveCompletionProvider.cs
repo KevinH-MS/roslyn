@@ -8,7 +8,8 @@ using Microsoft.CodeAnalysis.Editor.Completion.FileSystem;
 namespace Microsoft.CodeAnalysis.Editor.CSharp.Completion.FileSystem
 {
     // TODO(cyrusn): Use a predefined name here.
-    [ExportCompletionProvider("ReferenceDirectiveCompletionProvider", LanguageNames.CSharp)]
+    // TODO: If we end up exposing a "C# Script" LanguageName, we should use that instead of CSharpScriptContentType.
+    [ExportCompletionProvider("ReferenceDirectiveCompletionProvider", ContentTypeNames.CSharpScriptContentType)]
     internal partial class ReferenceDirectiveCompletionProvider : AbstractReferenceDirectiveCompletionProvider
     {
         public ReferenceDirectiveCompletionProvider()

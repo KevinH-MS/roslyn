@@ -2,6 +2,7 @@
 
 Imports System.Runtime.InteropServices
 Imports System.Threading
+Imports Microsoft.CodeAnalysis.Editor
 Imports Microsoft.CodeAnalysis.Formatting
 Imports Microsoft.CodeAnalysis.Text
 Imports Microsoft.CodeAnalysis.VisualBasic
@@ -16,11 +17,9 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic
             MyBase.New(package)
         End Sub
 
-        Protected Overrides ReadOnly Property ContentTypeName As String
-            Get
-                Return "Basic"
-            End Get
-        End Property
+        Protected Overrides Function GetContentTypeNameFromFileExtension(fileExtension As String) As String
+            Return If(fileExtension = ".vbx", ContentTypeNames.VisualBasicScriptContentType, ContentTypeNames.VisualBasicContentType)
+        End Function
 
         Protected Overrides Function GetFormattedTextChanges(workspace As VisualStudioWorkspace, filePath As String, text As SourceText, cancellationToken As CancellationToken) As IList(Of TextChange)
             Dim root = SyntaxFactory.ParseSyntaxTree(text, path:=filePath, cancellationToken:=cancellationToken).GetRoot(cancellationToken)

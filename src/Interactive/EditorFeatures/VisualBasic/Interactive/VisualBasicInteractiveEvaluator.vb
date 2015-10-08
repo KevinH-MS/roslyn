@@ -26,7 +26,7 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.Interactive
                        responseFileDirectory As String,
                        initialWorkingDirectory As String)
 
-            MyBase.New(contentTypeRegistry.GetContentType(ContentTypeNames.VisualBasicContentType),
+            MyBase.New(contentTypeRegistry.GetContentType(ContentTypeNames.VisualBasicScriptContentType),
                        hostServices,
                        classifierAggregator,
                        commandsFactory,

@@ -19,5 +19,10 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.ContentType
         [Name(ContentTypeNames.CSharpSignatureHelpContentType)]
         [BaseDefinition("sighelp")]
         public static readonly ContentTypeDefinition SignatureHelpContentTypeDefinition;
+
+        [Export]
+        [Name(ContentTypeNames.CSharpScriptContentType)]
+        [BaseDefinition(ContentTypeNames.CSharpContentType)]
+        public static readonly ContentTypeDefinition CSharpScriptContentTypeDefinition;
     }
 }

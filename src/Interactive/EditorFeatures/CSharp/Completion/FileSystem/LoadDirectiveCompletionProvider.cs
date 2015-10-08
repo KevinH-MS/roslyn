@@ -11,7 +11,8 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Microsoft.CodeAnalysis.Editor.CSharp.Completion.FileSystem
 {
-    [ExportCompletionProvider("LoadDirectiveCompletionProvider", LanguageNames.CSharp)]
+    // TODO: If we end up exposing a "C# Script" LanguageName, we should use that instead of CSharpScriptContentType.
+    [ExportCompletionProvider("LoadDirectiveCompletionProvider", ContentTypeNames.CSharpScriptContentType)]
     internal partial class LoadDirectiveCompletionProvider : CompletionListProvider
     {
         private const string NetworkPath = "\\\\";

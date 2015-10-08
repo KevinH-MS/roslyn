@@ -20,5 +20,10 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.ContentType
         <BaseDefinition("sighelp")>
         Public ReadOnly SignatureHelpContentTypeDefinition As ContentTypeDefinition
 
+        <Export()>
+        <Name(ContentTypeNames.VisualBasicScriptContentType)>
+        <BaseDefinition(ContentTypeNames.VisualBasicContentType)>
+        Public ReadOnly VisualBasicScriptContentTypeDefinition As ContentTypeDefinition
+
     End Module
 End Namespace

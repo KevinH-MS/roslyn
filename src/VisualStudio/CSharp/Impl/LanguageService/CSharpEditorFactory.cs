@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Editor;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.LanguageServices.Implementation;
@@ -20,9 +21,9 @@ namespace Microsoft.VisualStudio.LanguageServices.CSharp.LanguageService
         {
         }
 
-        protected override string ContentTypeName
+        protected override string GetContentTypeNameFromFileExtension(string fileExtension)
         {
-            get { return "CSharp"; }
+            return (fileExtension == ".csx") ? ContentTypeNames.CSharpScriptContentType : ContentTypeNames.CSharpContentType;
         }
 
         protected override IList<TextChange> GetFormattedTextChanges(VisualStudioWorkspace workspace, string filePath, SourceText text, CancellationToken cancellationToken)

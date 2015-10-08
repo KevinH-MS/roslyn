@@ -28,7 +28,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.Interactive
             string responseFileDirectory,
             string initialWorkingDirectory)
             : base(
-                contentTypeRegistry.GetContentType(ContentTypeNames.CSharpContentType),
+                contentTypeRegistry.GetContentType(ContentTypeNames.CSharpScriptContentType),
                 hostServices,
                 classifierAggregator,
                 commandsFactory,

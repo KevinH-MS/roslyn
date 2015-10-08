@@ -8,14 +8,13 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
-using Microsoft.VisualStudio.InteractiveWindow;
 using Microsoft.VisualStudio.InteractiveWindow.Commands;
 using Microsoft.VisualStudio.InteractiveWindow.Shell;
 
 namespace Microsoft.VisualStudio.LanguageServices.CSharp.Interactive
 {
     [Export(typeof(IVsInteractiveWindowOleCommandTargetProvider))]
-    [ContentType(ContentTypeNames.CSharpContentType)]
+    [ContentType(ContentTypeNames.CSharpScriptContentType)]
     [ContentType(PredefinedInteractiveCommandsContentTypes.InteractiveCommandContentTypeName)]
     internal sealed class CSharpVsInteractiveWindowCommandProvider : IVsInteractiveWindowOleCommandTargetProvider
     {
