@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.ErrorReporting;
 using Microsoft.CodeAnalysis.Internal.Log;
 using Microsoft.CodeAnalysis.Shared.Extensions;
+using Microsoft.CodeAnalysis.SolutionCrawler;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.Diagnostics.EngineV2
@@ -16,12 +17,12 @@ namespace Microsoft.CodeAnalysis.Diagnostics.EngineV2
     // TODO: make it to use cache
     internal partial class DiagnosticIncrementalAnalyzer : BaseDiagnosticIncrementalAnalyzer
     {
-        public override Task AnalyzeSyntaxAsync(Document document, CancellationToken cancellationToken)
+        public override Task AnalyzeSyntaxAsync(Document document, InvocationReasons reasons, CancellationToken cancellationToken)
         {
             return AnalyzeDocumentForKindAsync(document, AnalysisKind.Syntax, cancellationToken);
         }
 
-        public override Task AnalyzeDocumentAsync(Document document, SyntaxNode bodyOpt, CancellationToken cancellationToken)
+        public override Task AnalyzeDocumentAsync(Document document, SyntaxNode bodyOpt, InvocationReasons reasons, CancellationToken cancellationToken)
         {
             return AnalyzeDocumentForKindAsync(document, AnalysisKind.Semantic, cancellationToken);
         }
@@ -64,7 +65,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics.EngineV2
             }
         }
 
-        public override async Task AnalyzeProjectAsync(Project project, bool semanticsChanged, CancellationToken cancellationToken)
+        public override async Task AnalyzeProjectAsync(Project project, bool semanticsChanged, InvocationReasons reasons, CancellationToken cancellationToken)
         {
             try
             {

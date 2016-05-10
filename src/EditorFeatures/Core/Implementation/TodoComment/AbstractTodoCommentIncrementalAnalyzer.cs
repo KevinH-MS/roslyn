@@ -44,7 +44,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.TodoComments
             return _state.PersistAsync(document, new Data(VersionStamp.Default, VersionStamp.Default, ImmutableArray<TodoItem>.Empty), cancellationToken);
         }
 
-        public async Task AnalyzeSyntaxAsync(Document document, CancellationToken cancellationToken)
+        public async Task AnalyzeSyntaxAsync(Document document, InvocationReasons reasons, CancellationToken cancellationToken)
         {
             Contract.ThrowIfFalse(document.IsFromPrimaryBranch());
 
@@ -222,12 +222,12 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.TodoComments
             return SpecializedTasks.EmptyTask;
         }
 
-        public Task AnalyzeDocumentAsync(Document document, SyntaxNode bodyOpt, CancellationToken cancellationToken)
+        public Task AnalyzeDocumentAsync(Document document, SyntaxNode bodyOpt, InvocationReasons reasons, CancellationToken cancellationToken)
         {
             return SpecializedTasks.EmptyTask;
         }
 
-        public Task AnalyzeProjectAsync(Project project, bool semanticsChanged, CancellationToken cancellationToken)
+        public Task AnalyzeProjectAsync(Project project, bool semanticsChanged, InvocationReasons reasons, CancellationToken cancellationToken)
         {
             return SpecializedTasks.EmptyTask;
         }

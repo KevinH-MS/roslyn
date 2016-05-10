@@ -73,7 +73,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Diagnostics
                 _workspace = workspace;
             }
 
-            public async Task AnalyzeSyntaxAsync(Document document, CancellationToken cancellationToken)
+            public async Task AnalyzeSyntaxAsync(Document document, InvocationReasons reasons, CancellationToken cancellationToken)
             {
                 // if closed file diagnostic is off and document is not opened, then don't do anything
                 if (!CheckOptions(document))
@@ -121,12 +121,12 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Diagnostics
             }
 
             // method we don't care. misc project only supports syntax errors
-            public Task AnalyzeDocumentAsync(Document document, SyntaxNode bodyOpt, CancellationToken cancellationToken)
+            public Task AnalyzeDocumentAsync(Document document, SyntaxNode bodyOpt, InvocationReasons reasons, CancellationToken cancellationToken)
             {
                 return SpecializedTasks.EmptyTask;
             }
 
-            public Task AnalyzeProjectAsync(Project project, bool semanticsChanged, CancellationToken cancellationToken)
+            public Task AnalyzeProjectAsync(Project project, bool semanticsChanged, InvocationReasons reasons, CancellationToken cancellationToken)
             {
                 return SpecializedTasks.EmptyTask;
             }
