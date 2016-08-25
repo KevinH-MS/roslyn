@@ -393,7 +393,7 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
 
         internal abstract string GetArrayDisplayString(DkmClrAppDomain appDomain, Type lmrType, ReadOnlyCollection<int> sizes, ReadOnlyCollection<int> lowerBounds, ObjectDisplayOptions options);
 
-        internal abstract string GetArrayIndexExpression(int[] indices);
+        internal abstract string GetArrayIndexExpression(string[] indices);
 
         internal abstract string GetCastExpression(string argument, string type, bool parenthesizeArgument, bool parenthesizeEntireExpression);
 
@@ -401,7 +401,7 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
 
         internal abstract string GetNameForEnumValue(ArrayBuilder<EnumField> fields, object value, ulong underlyingValue, ObjectDisplayOptions options, Type typeToDisplayOpt);
 
-        internal abstract string GetObjectCreationExpression(string type, string arguments);
+        internal abstract string GetObjectCreationExpression(string type, string[] arguments);
 
         internal abstract string FormatLiteral(char c, ObjectDisplayOptions options);
 

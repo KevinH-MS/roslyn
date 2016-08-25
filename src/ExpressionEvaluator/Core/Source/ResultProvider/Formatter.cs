@@ -21,11 +21,13 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
     {
         private readonly string _defaultFormat;
         private readonly string _nullString;
+        private readonly string _thisString;
 
-        internal Formatter(string defaultFormat, string nullString)
+        internal Formatter(string defaultFormat, string nullString, string thisString)
         {
             _defaultFormat = defaultFormat;
             _nullString = nullString;
+            _thisString = thisString;
         }
 
         string IDkmClrFormatter.GetValueString(DkmClrValue value, DkmInspectionContext inspectionContext, ReadOnlyCollection<string> formatSpecifiers)
@@ -71,7 +73,7 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
             return sawInvalidIdentifier ? null : name;
         }
 
-        string IDkmClrFullNameProvider.GetClrArrayIndexExpression(DkmInspectionContext inspectionContext, int[] indices)
+        string IDkmClrFullNameProvider.GetClrArrayIndexExpression(DkmInspectionContext inspectionContext, string[] indices)
         {
             return GetArrayIndexExpression(indices);
         }
@@ -87,7 +89,7 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
             return GetCastExpression(argument, name, parenthesizeArgument, parenthesizeEntireExpression);
         }
 
-        string IDkmClrFullNameProvider.GetClrObjectCreationExpression(DkmInspectionContext inspectionContext, DkmClrType type, DkmClrCustomTypeInfo customTypeInfo, string arguments)
+        string IDkmClrFullNameProvider.GetClrObjectCreationExpression(DkmInspectionContext inspectionContext, DkmClrType type, DkmClrCustomTypeInfo customTypeInfo, string[] arguments)
         {
             bool sawInvalidIdentifier;
             var name = GetTypeName(new TypeAndCustomInfo(type, customTypeInfo), escapeKeywordIdentifiers: true, sawInvalidIdentifier: out sawInvalidIdentifier);
@@ -112,6 +114,16 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
         string IDkmClrFullNameProvider.GetClrExpressionAndFormatSpecifiers(DkmInspectionContext inspectionContext, string expression, out ReadOnlyCollection<string> formatSpecifiers)
         {
             return TrimAndGetFormatSpecifiers(expression, out formatSpecifiers);
+        }
+
+        string IDkmClrFullNameProvider.GetClrExpressionForNull(DkmInspectionContext inspectionContext)
+        {
+            return _nullString;
+        }
+
+        string IDkmClrFullNameProvider.GetClrExpressionForThis(DkmInspectionContext inspectionContext)
+        {
+            return _thisString;
         }
 
         bool IDkmClrFullNameProvider.ClrExpressionMayRequireParentheses(DkmInspectionContext inspectionContext, string expression)

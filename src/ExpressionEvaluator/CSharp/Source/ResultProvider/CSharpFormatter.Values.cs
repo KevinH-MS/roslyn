@@ -89,7 +89,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             return pooled.ToStringAndFree();
         }
 
-        internal override string GetArrayIndexExpression(int[] indices)
+        internal override string GetArrayIndexExpression(string[] indices)
         {
             Debug.Assert(indices != null);
 
@@ -183,7 +183,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             return null;
         }
 
-        internal override string GetObjectCreationExpression(string type, string arguments)
+        internal override string GetObjectCreationExpression(string type, string[] arguments)
         {
             Debug.Assert(!string.IsNullOrEmpty(type));
 
@@ -193,7 +193,15 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             builder.Append("new ");
             builder.Append(type);
             builder.Append('(');
-            builder.Append(arguments);
+            var n = arguments.Length;
+            for (int i = 0; i < n; i++)
+            {
+                builder.Append(arguments[i]);
+                if (i < n - 1)
+                {
+                    builder.Append(", ");
+                }
+            }
             builder.Append(')');
 
             return pooled.ToStringAndFree();

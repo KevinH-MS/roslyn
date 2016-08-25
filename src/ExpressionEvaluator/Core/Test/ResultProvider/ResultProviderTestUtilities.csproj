@@ -132,6 +132,8 @@
     <Compile Include="Debugger\Engine\DkmVendorId.cs" />
     <Compile Include="Debugger\Engine\DkmWorkList.cs" />
     <Compile Include="Debugger\Engine\IDkmClrFormatter.cs" />
+    <Compile Include="Debugger\Engine\IDkmClrFormatter2.cs" />
+    <Compile Include="Debugger\Engine\IDkmClrFullNameProvider.cs" />
     <Compile Include="Debugger\Engine\IDkmClrResultProvider.cs" />
     <Compile Include="Debugger\MemberInfo\AssemblyImpl.cs" />
     <Compile Include="Debugger\MemberInfo\ConstructorInfoImpl.cs" />

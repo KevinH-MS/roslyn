@@ -210,7 +210,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
                 throw new NotImplementedException();
             }
 
-            string IDkmClrFullNameProvider.GetClrArrayIndexExpression(DkmInspectionContext inspectionContext, int[] indices)
+            string IDkmClrFullNameProvider.GetClrArrayIndexExpression(DkmInspectionContext inspectionContext, string[] indices)
             {
                 throw new NotImplementedException();
             }
@@ -220,7 +220,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
                 throw new NotImplementedException();
             }
 
-            string IDkmClrFullNameProvider.GetClrObjectCreationExpression(DkmInspectionContext inspectionContext, DkmClrType type, DkmClrCustomTypeInfo customTypeInfo, string arguments)
+            string IDkmClrFullNameProvider.GetClrObjectCreationExpression(DkmInspectionContext inspectionContext, DkmClrType type, DkmClrCustomTypeInfo customTypeInfo, string[] arguments)
             {
                 throw new NotImplementedException();
             }
@@ -233,6 +233,16 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
             string IDkmClrFullNameProvider.GetClrExpressionAndFormatSpecifiers(DkmInspectionContext inspectionContext, string expression, out ReadOnlyCollection<string> formatSpecifiers)
             {
                 return ((IDkmClrFullNameProvider)_fallback).GetClrExpressionAndFormatSpecifiers(inspectionContext, expression, out formatSpecifiers);
+            }
+
+            string IDkmClrFullNameProvider.GetClrExpressionForNull(DkmInspectionContext inspectionContext)
+            {
+                throw new NotImplementedException();
+            }
+
+            string IDkmClrFullNameProvider.GetClrExpressionForThis(DkmInspectionContext inspectionContext)
+            {
+                throw new NotImplementedException();
             }
 
             bool IDkmClrFullNameProvider.ClrExpressionMayRequireParentheses(DkmInspectionContext inspectionContext, string expression)

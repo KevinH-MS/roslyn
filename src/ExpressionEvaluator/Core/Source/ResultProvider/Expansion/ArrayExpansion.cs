@@ -74,7 +74,7 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
         {
             var indices = GetIndices(index);
             var fullNameProvider = resultProvider.FullNameProvider;
-            var name = fullNameProvider.GetClrArrayIndexExpression(inspectionContext, indices);
+            var name = fullNameProvider.GetClrArrayIndexExpression(inspectionContext, GetIndicesAsStrings(indices));
             var element = value.GetArrayElement(indices, inspectionContext);
             var fullName = GetFullName(inspectionContext, parent, name, fullNameProvider);
             return resultProvider.CreateDataItem(
@@ -109,6 +109,17 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
                 index = index % divisor;
             }
             return indices;
+        }
+
+        private static string[] GetIndicesAsStrings(int[] indices)
+        {
+            var n = indices.Length;
+            var strings = new string[n];
+            for (int i = 0; i < n; i++)
+            {
+                strings[i] = indices[i].ToString();
+            }
+            return strings;
         }
 
         private static ReadOnlyCollection<int> CalculateDivisors(ReadOnlyCollection<int> sizes)

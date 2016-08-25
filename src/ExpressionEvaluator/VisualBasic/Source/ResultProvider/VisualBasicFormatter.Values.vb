@@ -55,7 +55,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.ExpressionEvaluator
             Return pooled.ToStringAndFree()
         End Function
 
-        Friend Overrides Function GetArrayIndexExpression(indices() As Integer) As String
+        Friend Overrides Function GetArrayIndexExpression(indices() As String) As String
             Debug.Assert(indices IsNot Nothing)
 
             Dim pooled = PooledStringBuilder.GetInstance()
@@ -138,7 +138,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.ExpressionEvaluator
             Return Nothing
         End Function
 
-        Friend Overrides Function GetObjectCreationExpression(type As String, arguments As String) As String
+        Friend Overrides Function GetObjectCreationExpression(type As String, arguments() As String) As String
             Debug.Assert(Not String.IsNullOrEmpty(type))
 
             Dim pooled = PooledStringBuilder.GetInstance()
@@ -147,7 +147,13 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.ExpressionEvaluator
             builder.Append("New ")
             builder.Append(type)
             builder.Append("("c)
-            builder.Append(arguments)
+            Dim n = arguments.Length
+            For i = 0 To n - 1
+                builder.Append(arguments(i))
+                If (i < n - 1) Then
+                    builder.Append(", ")
+                End If
+            Next
             builder.Append(")"c)
 
             Return pooled.ToStringAndFree()
