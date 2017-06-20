@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<RunSettings>  
+  <RunConfiguration>  
+    <TestAdaptersPaths>%userprofile%\.nuget\packages\xunit.runner.visualstudio\2.2.0-beta4-build1194</TestAdaptersPaths>  
+  </RunConfiguration>   
+</RunSettings>  
