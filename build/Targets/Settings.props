@@ -72,6 +72,7 @@
     <RoslynNetSdkRootPath>$(MSBuildSDKsPath)\Microsoft.NET.Sdk\Sdk\</RoslynNetSdkRootPath> 
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
 
+    <!-- We should be able to remove this extra property once Roslyn projects include the Sdk="Microsoft.NET.Sdk" attribute. -->
     <ProjectAssetsFile Condition="'$(BuildingForLiveUnitTesting)' == 'true'">$(LiveUnitTestingOriginalBaseIntermediateOutputPath)project.assets.json</ProjectAssetsFile>
   </PropertyGroup>
 
