@@ -5,10 +5,6 @@
     <GeneratedInternalsVisibleToFile>$(IntermediateOutputPath)GeneratedInternalsVisibleTo$(DefaultLanguageSourceExtension)</GeneratedInternalsVisibleToFile>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <CoreCompileDependsOn>GenerateInternalsVisibleToFile;$(CoreCompileDependsOn)</CoreCompileDependsOn>
-  </PropertyGroup>
-
   <ItemDefinitionGroup>
     <InternalsVisibleTo>
       <Visible>false</Visible>
@@ -48,6 +44,7 @@
   <Target Name="GenerateInternalsVisibleToFile"
           Inputs="$(MSBuildThisFileFullPath);$(MSBuildProjectFile)"
           Outputs="$(GeneratedInternalsVisibleToFile)"
+          BeforeTargets="CoreCompile"
           DependsOnTargets="PrepareForBuild"
           Condition="'@(InternalsVisibleTo)' != '' OR '@(InternalsVisibleToTest)' != '' OR '@(InternalsVisibleToTypeScript)' != '' OR '@(InternalsVisibleToVisualStudio)' != '' OR '@(InternalsVisibleToFSharp)' != '' OR '@(InternalsVisibleToMoq)' != ''  OR '@(InternalsVisibleToRazor)' != '' OR '@(InternalsVisibleToMonodevelop)' != ''">
 

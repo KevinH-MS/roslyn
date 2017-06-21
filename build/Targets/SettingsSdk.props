@@ -5,6 +5,7 @@
   <PropertyGroup>
     <RoslynSdkProject>true</RoslynSdkProject>
     <EnableDefaultItems>false</EnableDefaultItems>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
 
   <Import Project="Settings.props" />

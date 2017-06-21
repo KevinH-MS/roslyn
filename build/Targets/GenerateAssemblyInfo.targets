@@ -23,8 +23,7 @@
     </AssemblyVersionAttribute>
   </ItemGroup>
 
-  <PropertyGroup>
-    <!-- It is extremely important to make CoreCompile depend on us, and not anything else.
+  <!-- It is extremely important that we run before CoreCompile (not some other related target).
 
     This has to do with how XAML tasks compile a temporary assembly during the two markup compile
     passes.
@@ -54,10 +53,7 @@
 
     This is why if we use CoreCompile below the correct version will end up in the temporary assembly
     and the .baml will be generated correctly eliminating the assembly load failures.
-
-    -->
-    <CoreCompileDependsOn>GenerateAssemblyInfoFile;$(CoreCompileDependsOn)</CoreCompileDependsOn>
-  </PropertyGroup>
+  -->
 
   <!-- Depends on PrepareForBuild because the latter is responsible for calling MakeDir(IntermediateOutputPath).
   Without it, if we do a design-time build of a project (e.g. in Workspace.LoadSolution) immediately following
@@ -65,6 +61,7 @@
   <Target Name="GenerateAssemblyInfoFile"
           Inputs="$(MSBuildThisFileFullPath)"
           Outputs="$(GeneratedAssemblyInfoFile)"
+          BeforeTargets="CoreCompile"
           DependsOnTargets="PrepareForBuild"
           Condition="('$(Language)' == 'C#' OR '$(Language)' == 'VB')">
 

@@ -26,9 +26,9 @@
          Follow-up issue to reconcile the two: https://github.com/dotnet/roslyn/issues/19645 -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseRoslynAnalyzers Condition="'$(UseRoslynAnalyzers)' == ''">true</UseRoslynAnalyzers>
-    <BaseOutputPath Condition="'$(BaseOutputPath)' == ''">$(RepoRoot)Binaries\</BaseOutputPath>
+    <BaseOutputPath>$(RepoRoot)Binaries\</BaseOutputPath>
     <OutputPath>$(BaseOutputPath)$(Configuration)\</OutputPath>
-    <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)' == ''">$(RepoRoot)Binaries\Obj\</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(RepoRoot)Binaries\Obj\</BaseIntermediateOutputPath>
     <BaseIntermediateOutputPath>$(BaseIntermediateOutputPath)$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(Configuration)</IntermediateOutputPath>
 
@@ -68,12 +68,6 @@
       {TargetFrameworkDirectory};
       {RawFileName};
     </AssemblySearchPaths>
-
-    <RoslynNetSdkRootPath>$(MSBuildSDKsPath)\Microsoft.NET.Sdk\Sdk\</RoslynNetSdkRootPath> 
-    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
-
-    <!-- We should be able to remove this extra property once Roslyn projects include the Sdk="Microsoft.NET.Sdk" attribute. -->
-    <ProjectAssetsFile Condition="'$(BuildingForLiveUnitTesting)' == 'true'">$(LiveUnitTestingOriginalBaseIntermediateOutputPath)project.assets.json</ProjectAssetsFile>
   </PropertyGroup>
 
   <!-- Windows specific settings -->
@@ -138,8 +132,6 @@
   <!-- This file is imported by all projects at the beginning of the project files -->
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
           Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props') AND '$(RoslynSdkProject)' != 'true'" />
-
-  <Import Project="$(RoslynNetSdkRootPath)Sdk.props" Condition="'$(RoslynSdkProject)' == 'true'" />
 
   <Import Project="$(RoslynDiagnosticsPropsFilePath)" Condition="'$(UseRoslynAnalyzers)' == 'true' AND Exists('$(RoslynDiagnosticsPropsFilePath)')" />
 
